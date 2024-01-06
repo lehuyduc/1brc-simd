@@ -1,4 +1,4 @@
- #include "my_timer.h"
+#include "my_timer.h"
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -27,9 +27,9 @@ uint32_t SMALL = 779347;
 
 struct Stats {
     int cnt;
-    float sum;
-    float max;
-    float min;
+    int64_t sum;
+    int16_t max;
+    int16_t min;
 
     Stats() {
         cnt = 0;
@@ -131,9 +131,9 @@ inline int handle_line(const uint8_t* data, Stats* my_recorded_stats)
     // There are 4 cases: ;9.1, ;92.1, ;-9.1, ;-92.1
     pos += (data[pos + 1] == '-'); // after this, data[pos] = position right before first digit
     bool negative = data[pos] == '-';
-    float case1 = (data[pos + 1] - 48) + 0.1f * (data[pos + 3] - 48); // 9.1
-    float case2 = (10 * (data[pos + 1] - 48) + (data[pos + 2] - 48)) + 0.1f * (data[pos + 4] - 48); // 92.1
-    float value = (data[pos + 2] == '.') ? case1 : case2;
+    int16_t case1 = 10 * (data[pos + 1] - 48) + (data[pos + 3] - 48);
+    int16_t case2 = (100 * (data[pos + 1] - 48) + 10 * (data[pos + 2] - 48)) + (data[pos + 4] - 48);    
+    int16_t value = (data[pos + 2] == '.') ? case1 : case2;
     if (negative) value = -value;
 
     auto& stats = my_recorded_stats[myhash];
@@ -248,9 +248,9 @@ int main()
         const auto& result = results[i];
         string station_name = result.first;
         Stats stats = result.second;
-        float avg = roundTo1Decimal(stats.sum / stats.cnt);
-        float mymax = roundTo1Decimal(stats.max);
-        float mymin = roundTo1Decimal(stats.min);
+        float avg = roundTo1Decimal((double)stats.sum / 10.0 / stats.cnt);
+        float mymax = roundTo1Decimal((double)stats.max / 10.0);
+        float mymin = roundTo1Decimal((double)stats.min / 10.0);
 
         fo << station_name << "=" << mymin << "/" << avg << "/" << mymax;
         if (i < results.size() - 1) fo << ", ";

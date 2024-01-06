@@ -10,6 +10,7 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
 using namespace std;
 
 const string FILE_PATH = "measurements.txt";
@@ -22,8 +23,8 @@ struct Stats {
     float min;
 
     Stats() {
-        max = 1024;
-        min = -1024;
+        max = -1024;
+        min = 1024;
         sum = 0;
         cnt = 0;
     }
@@ -72,6 +73,10 @@ inline int handle_line(const uint8_t* data)
     return pos + 1;
 }
 
+float roundTo1Decimal(float number) {
+    return std::round(number * 10.0) / 10.0;
+}
+
 int main()
 {
     int fd = open(FILE_PATH.c_str(), O_RDONLY);
@@ -95,12 +100,20 @@ int main()
     sort(results.begin(), results.end());
 
     ofstream fo("result1.txt");
-    for (auto &result : results) {
+    fo << fixed << setprecision(1);
+    fo << "{";
+    for (size_t i = 0; i < results.size(); i++) {
+        const auto& result = results[i];
         string station_name = result.first;
         Stats stats = result.second;
-        float avg = stats.sum / stats.cnt;
-        fo << station_name << " " << avg << " " << stats.max << " " << stats.min << "\n";
+        float avg = roundTo1Decimal(stats.sum / stats.cnt);
+        float mymax = roundTo1Decimal(stats.max);
+        float mymin = roundTo1Decimal(stats.min);
+
+        fo << station_name << "=" << mymin << "/" << avg << "/" << mymax;
+        if (i < results.size() - 1) fo << ", ";
     }
+    fo << "}";
     fo.close();
     
     cout << "station count = " << recorded_stats.size() << "\n";

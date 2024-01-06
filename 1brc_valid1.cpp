@@ -23,7 +23,7 @@ using namespace std;
 
 constexpr uint32_t SMALL = 779347;
 constexpr int MAX_KEY_LENGTH = 100;
-constexpr int NUM_BINS = 4096;
+constexpr int NUM_BINS = 16384 * 2;
 
 struct Stats {
     int cnt;
@@ -111,7 +111,7 @@ void hmap_insert(HashBin* hmap, uint32_t hash_value, const uint8_t* key, int len
 }
 
 template <bool SAFE_HASH = false>
-inline int handle_line(const uint8_t* data, HashBin* hmap)
+inline int handle_line(int tid, const uint8_t* data, HashBin* hmap)
 {
     int pos;
     uint32_t myhash;
@@ -172,7 +172,7 @@ inline int handle_line(const uint8_t* data, HashBin* hmap)
     float case2 = (10 * (data[pos + 1] - 48) + (data[pos + 2] - 48)) + 0.1f * (data[pos + 4] - 48); // 92.1
     float value = (data[pos + 2] == '.') ? case1 : case2;
     if (negative) value = -value;
-
+    
     hmap_insert(hmap, myhash, data, key_end, value);
 
     return pos + 3 + (data[pos + 3] == '.') + 1 + 1;
@@ -181,9 +181,15 @@ inline int handle_line(const uint8_t* data, HashBin* hmap)
 void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_byte, size_t file_size)
 {
     size_t idx = from_byte;
-    while (data[idx] != '\n') idx++;
-    idx++;
-    if (idx >= to_byte) return;
+    // always start from beginning of a line
+    if (from_byte != 0 && data[from_byte - 1] != '\n') {
+        while (data[idx] != '\n') idx++;
+        idx++;
+    }
+    if (idx >= to_byte) {
+        // this should never happen since if dataset is too small, we use 1 thread
+        throw std::runtime_error("idx >= to_byte error");        
+    }
         
     // Thread that process end block must not use SIMD in the last few lines
     // to prevent potential out-of-range access error.
@@ -191,12 +197,12 @@ void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_b
     if (tid == N_THREADS - 1) to_byte -= 2 * MAX_KEY_LENGTH;
 
     while (idx < to_byte) {
-        idx += handle_line<false>(data + idx, hmaps[tid]);
+        idx += handle_line<false>(tid, data + idx, hmaps[tid]);
     }
 
     if (tid == N_THREADS - 1) {
         while (idx < file_size) {
-            idx += handle_line<true>(data + idx, hmaps[tid]);
+            idx += handle_line<true>(tid, data + idx, hmaps[tid]);
         }
     }
 }
@@ -238,7 +244,7 @@ int main(int argc, char* argv[])
         if (ender > file_size) ender = file_size;
         threads.emplace_back([tid, data, starter, ender, file_size]() {
             handle_line_raw(tid, data, starter, ender, file_size);
-            });
+        });
     }
 
     for (auto& thread : threads) thread.join();

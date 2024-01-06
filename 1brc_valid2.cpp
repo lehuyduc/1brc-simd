@@ -87,9 +87,10 @@ alignas(4096) const uint8_t strcmp_mask[32] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
+template <bool SAFE_HASH>
 inline void hmap_insert(HashBin* hmap, uint32_t hash_value, const uint8_t* key, int len, float value)
 {
-  if (likely(len <= 16)) {
+  if (likely(!SAFE_HASH && len <= 16)) {
     __m128i chars = _mm_loadu_si128((__m128i*)key);
     __m128i mask = _mm_loadu_si128((__m128i*)(strcmp_mask + 16 - len));
     __m128i key_chars = _mm_and_si128(chars, mask);
@@ -191,7 +192,7 @@ inline int handle_line(const uint8_t* data, HashBin* hmap)
     float value = (data[pos + 2] == '.') ? case1 : case2;
     if (negative) value = -value;
     
-    hmap_insert(hmap, myhash, data, key_end, value);
+    hmap_insert<SAFE_HASH>(hmap, myhash, data, key_end, value);
 
     return pos + 3 + (data[pos + 3] == '.') + 1 + 1;
 }

@@ -5,17 +5,17 @@ https://www.morling.dev/blog/one-billion-row-challenge/
 
 -----------
 # Test result on a shared server with AMD 2950x at 2.2 GHz:
-- With 32 threads:
+- 32 threads, input assumption:
 Runtime inside main = 683.349ms
-real	0m0.847s
-user	0m17.386s
-sys	0m1.009s
+real 0m0.847s
+user 0m17.386s
+sys 0m1.009s
 
-- With 8 threads:
-Runtime inside main = 2048.62ms
-real	0m2.204s
-user	0m15.212s
-sys	0m0.584s
+- 32 threads, no input assumption:
+Runtime inside main = 712.453ms
+real    0m0.912s
+user    0m20.750s
+sys     0m0.664s
 
 Use sha256sum to check that output is same as reference output
 016930801788eb421a15cf6def8ea435b4b47fb5f41df09e02ecdd7fbc9ac92b  result.txt
@@ -28,7 +28,8 @@ To run, just download the file above, extract, then `./run_cpp.sh`
 --------------
 # Main indeas:
 + Unsigned int overflow hashing
-+ SIMD to speedup hashing
++ SIMD hashing
++ SIMD for string comparison in hash table probing
 + Notice properties of actual data (length of station names, -99.9 <= recorded temperature <= 99.9)
 + Use some extra properties (not allowed by the rules) in `1brc_assume.cpp` to optimize more
 + Use mmap for fast file reading

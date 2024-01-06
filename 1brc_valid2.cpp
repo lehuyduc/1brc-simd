@@ -286,7 +286,7 @@ int main(int argc, char* argv[])
     sort(results.begin(), results.end());
 
     // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,
-    ofstream fo("result.txt");
+    ofstream fo("result_valid2.txt");
     fo << fixed << setprecision(1);
     fo << "{";
     for (size_t i = 0; i < results.size(); i++) {

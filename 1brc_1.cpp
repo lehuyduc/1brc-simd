@@ -13,7 +13,6 @@
 #include <iomanip>
 using namespace std;
 
-const string FILE_PATH = "measurements.txt";
 uint32_t SMALL = 113;
 
 struct Stats {
@@ -77,9 +76,12 @@ float roundTo1Decimal(float number) {
     return std::round(number * 10.0) / 10.0;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    int fd = open(FILE_PATH.c_str(), O_RDONLY);
+    string file_path = "measurements.txt";
+    if (argc > 1) file_path = string(argv[1]);
+
+    int fd = open(file_path.c_str(), O_RDONLY);
     struct stat file_stat;
     fstat(fd, &file_stat);
     size_t file_size = file_stat.st_size;

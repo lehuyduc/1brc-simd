@@ -59,7 +59,7 @@ std::unordered_map<string, Stats> final_recorded_stats;
 
 alignas(4096) uint32_t pow_small[64];
 
-HashBin hmaps[N_THREADS][NUM_BINS];
+alignas(4096) HashBin hmaps[N_THREADS][NUM_BINS];
 
 void init_pow_small() {
     uint32_t b[40];
@@ -90,12 +90,12 @@ alignas(4096) const uint8_t strcmp_mask[32] = {
 inline void hmap_insert(HashBin* hmap, uint32_t hash_value, const uint8_t* key, int len, float value)
 {
   if (likely(len <= 16)) {
+    __m128i chars = _mm_loadu_si128((__m128i*)key);
+    __m128i mask = _mm_loadu_si128((__m128i*)(strcmp_mask + 16 - len));
+    __m128i key_chars = _mm_and_si128(chars, mask);
     while (hmap[hash_value].len > 0) {
-      // SIMD string comparison
-      __m128i chars = _mm_loadu_si128((__m128i*)key);
-      __m128i bin_chars = _mm_loadu_si128((__m128i*)hmap[hash_value].key);
-      __m128i mask = _mm_loadu_si128((__m128i*)(strcmp_mask + 16 - len));
-      __m128i key_chars = _mm_and_si128(chars, mask);
+      // SIMD string comparison      
+      __m128i bin_chars = _mm_loadu_si128((__m128i*)hmap[hash_value].key);      
       if (_mm_testc_si128(bin_chars, key_chars)) break;
       hash_value = (hash_value + 1) % NUM_BINS;    
     }
@@ -113,7 +113,6 @@ inline void hmap_insert(HashBin* hmap, uint32_t hash_value, const uint8_t* key, 
       hash_value = (hash_value + 1) % NUM_BINS;
     }
   }
-  
 
   // each key will only be free 1 first time, so it's unlikely
   if (unlikely(hmap[hash_value].len == 0)) {        
@@ -306,4 +305,3 @@ int main(int argc, char* argv[])
     cout << "Runtime inside main = " << timer.getCounterMsPrecise() << "ms\n";
     return 0;
 }
-

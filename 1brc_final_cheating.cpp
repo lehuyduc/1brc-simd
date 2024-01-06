@@ -1,4 +1,4 @@
- #include "my_timer.h"
+#include "my_timer.h"
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -53,12 +53,12 @@ alignas(4096) Stats final_recorded_stats[HASH_TABLE_SIZE];
 alignas(4096) uint32_t pow_small[64];
 
 void init_pow_small() {
-    uint32_t b[40];
-    b[0] = 1;
-    for (int i = 1; i <= 32; i++) b[i] = b[i - 1] * SMALL;
+  uint32_t b[40];
+  b[0] = 1;
+  for (int i = 1; i <= 32; i++) b[i] = b[i - 1] * SMALL;
 
-    for (int i = 0; i < 32; i++) pow_small[i] = b[31 - i];
-    for (int i = 32; i < 64; i++) pow_small[i] = 0;
+  for (int i = 0; i < 32; i++) pow_small[i] = b[31 - i];
+  for (int i = 32; i < 64; i++) pow_small[i] = 0;
 }
 
 // https://en.algorithmica.org/hpc/simd/reduction/
@@ -81,16 +81,15 @@ inline int handle_line(const uint8_t* data, Stats* my_recorded_stats)
     // Most of the time it doesn't cause any error, but if the last extra bytes are past
     // the final memory page provided by mmap, it will cause SIGBUS.
     // So for the last few lines, we use safe code.
-    if constexpr (SAFE_HASH) {
+    if constexpr(SAFE_HASH) {
         pos = 0;
         myhash = 0;
         while (data[pos] != ';') {
             myhash = myhash * SMALL + data[pos];
             pos++;
         }
-        myhash >>= HASH_TRUNCATE;
-    }
-    else {
+        myhash >>= HASH_TRUNCATE;        
+    } else {
         __m128i separators = _mm_set1_epi8(';');
         __m128i chars = _mm_loadu_si128((__m128i*)data);
         __m128i compared = _mm_cmpeq_epi8(chars, separators);
@@ -99,7 +98,7 @@ inline int handle_line(const uint8_t* data, Stats* my_recorded_stats)
         if (likely(separator_mask)) {
             pos = __builtin_ctz(separator_mask);
             uint32_t pow_start = 32 - pos;
-
+                        
             __m256i pow_vec1 = _mm256_loadu_si256((__m256i*)(pow_small + pow_start));
             __m256i data_vec1 = _mm256_cvtepu8_epi32(chars);
             __m256i summer1 = _mm256_mullo_epi32(pow_vec1, data_vec1);
@@ -109,21 +108,20 @@ inline int handle_line(const uint8_t* data, Stats* my_recorded_stats)
             __m256i summer2 = _mm256_mullo_epi32(pow_vec2, data_vec2);
 
             __m256i summer = _mm256_add_epi32(summer1, summer2);
-            myhash = hsum(summer);
-        }
-        else {
+            myhash = hsum(summer);     
+        } else {
             pos = 0;
             myhash = 0;
             while (data[pos] != ';') {
                 myhash = myhash * SMALL + data[pos];
                 pos++;
-            }
+            }            
         }
-
+     
         myhash >>= HASH_TRUNCATE;
     }
 
-    if constexpr (STORE_NAME) {
+    if constexpr(STORE_NAME) {        
         hash_names[myhash] = string(data, data + pos);
     }
 
@@ -150,8 +148,15 @@ void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_b
     if (tid != 0) thread_recorded_stats[tid] = new Stats[HASH_TABLE_SIZE];
 
     size_t idx = from_byte;
-    while (data[idx] != '\n') idx++;
-    idx++;
+    // always start from beginning of a line
+    if (from_byte != 0 && data[from_byte - 1] != '\n') {
+        while (data[idx] != '\n') idx++;
+        idx++;
+    }
+    if (idx >= to_byte) {
+        // this should never happen since if dataset is too small, we use 1 thread
+        throw std::runtime_error("idx >= to_byte error");        
+    }
 
     if (tid == N_THREADS - 1) to_byte -= 100;
 
@@ -175,7 +180,7 @@ int main()
     MyTimer timer;
     timer.startCounter();
     init_pow_small();
-
+    
     int fd = open(FILE_PATH.c_str(), O_RDONLY);
     struct stat file_stat;
     fstat(fd, &file_stat);
@@ -183,9 +188,9 @@ int main()
 
     void* mapped_data_void = mmap(nullptr, file_size, PROT_READ, MAP_SHARED, fd, 0);
 
-    const uint8_t* data = reinterpret_cast<uint8_t*>(mapped_data_void);
+    const uint8_t *data = reinterpret_cast<uint8_t*>(mapped_data_void);
     //----------------------
-
+    
     thread_recorded_stats[0] = new Stats[HASH_TABLE_SIZE];
 
     size_t idx = 0;
@@ -196,8 +201,7 @@ int main()
     if (file_size < SMALL_LIMIT + 100) {
         while (idx < build_hash_name_size)
             idx += handle_line<true, true>(data + idx, thread_recorded_stats[0]);
-    }
-    else {
+    } else {
         while (idx < build_hash_name_size) {
             idx += handle_line<true, false>(data + idx, thread_recorded_stats[0]);
         }
@@ -207,14 +211,14 @@ int main()
         size_t remaining_bytes = file_size - idx;
         size_t bytes_per_thread = remaining_bytes / N_THREADS + 1;
         vector<size_t> tstart, tend;
-        vector<std::thread> threads;
+        vector<std::thread> threads;    
         for (size_t tid = 0; tid < N_THREADS; tid++) {
             size_t starter = idx + tid * bytes_per_thread;
             size_t ender = idx + (tid + 1) * bytes_per_thread;
             if (ender > file_size) ender = file_size;
             threads.emplace_back([tid, data, starter, ender, file_size]() {
                 handle_line_raw(tid, data, starter, ender, file_size);
-                });
+            });
         }
 
         for (auto& thread : threads) thread.join();
@@ -224,7 +228,7 @@ int main()
     //----------------------
     int n_threads = N_THREADS;
     if (small_file) n_threads = 1;
-    for (auto& [key, value] : hash_names) {
+    for (auto &[key, value] : hash_names) {        
         for (int tid = 0; tid < n_threads; tid++) {
             final_recorded_stats[key].cnt += thread_recorded_stats[tid][key].cnt;
             final_recorded_stats[key].sum += thread_recorded_stats[tid][key].sum;
@@ -235,13 +239,13 @@ int main()
 
 
     vector<pair<string, Stats>> results;
-    for (auto& [key, value] : hash_names) {
+    for (auto &[key, value] : hash_names) {
         results.emplace_back(value, final_recorded_stats[key]);
     }
     sort(results.begin(), results.end());
 
     // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,
-    ofstream fo("result.txt");
+    ofstream fo("result7.txt");
     fo << fixed << setprecision(1);
     fo << "{";
     for (size_t i = 0; i < results.size(); i++) {
@@ -253,7 +257,7 @@ int main()
         float mymin = roundTo1Decimal(stats.min);
 
         fo << station_name << "=" << mymin << "/" << avg << "/" << mymax;
-        if (i < results.size() - 1) fo << ", ";
+        if (i < results.size() - 1) fo << ", ";        
     }
     fo << "}";
     fo.close();

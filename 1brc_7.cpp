@@ -148,8 +148,15 @@ void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_b
     if (tid != 0) thread_recorded_stats[tid] = new Stats[HASH_TABLE_SIZE];
 
     size_t idx = from_byte;
-    while (data[idx] != '\n') idx++;
-    idx++;
+    // always start from beginning of a line
+    if (from_byte != 0 && data[from_byte - 1] != '\n') {
+        while (data[idx] != '\n') idx++;
+        idx++;
+    }
+    if (idx >= to_byte) {
+        // this should never happen since if dataset is too small, we use 1 thread
+        throw std::runtime_error("idx >= to_byte error");        
+    }
 
     if (tid == N_THREADS - 1) to_byte -= 100;
 

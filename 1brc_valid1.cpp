@@ -111,7 +111,7 @@ void hmap_insert(HashBin* hmap, uint32_t hash_value, const uint8_t* key, int len
 }
 
 template <bool SAFE_HASH = false>
-inline int handle_line(int tid, const uint8_t* data, HashBin* hmap)
+inline int handle_line(const uint8_t* data, HashBin* hmap)
 {
     int pos;
     uint32_t myhash;
@@ -197,12 +197,12 @@ void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_b
     if (tid == N_THREADS - 1) to_byte -= 2 * MAX_KEY_LENGTH;
 
     while (idx < to_byte) {
-        idx += handle_line<false>(tid, data + idx, hmaps[tid]);
+        idx += handle_line<false>(data + idx, hmaps[tid]);
     }
 
     if (tid == N_THREADS - 1) {
         while (idx < file_size) {
-            idx += handle_line<true>(tid, data + idx, hmaps[tid]);
+            idx += handle_line<true>(data + idx, hmaps[tid]);
         }
     }
 }

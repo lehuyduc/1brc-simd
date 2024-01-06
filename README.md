@@ -27,9 +27,10 @@ To run, just download the file above, extract, then `./run_cpp.sh`
 
 --------------
 # Main indeas:
-+ Unsigned int overflow hashing (WARNING: WILL FAIL AGAINST SYNTHETIC ANTI-HASH DATA)
++ Unsigned int overflow hashing
 + SIMD to speedup hashing
 + Notice properties of actual data (length of station names, -99.9 <= recorded temperature <= 99.9)
++ Use some extra properties (not allowed by the rules) in `1brc_assume.cpp` to optimize more
 + Use mmap for fast file reading
 + Multi threads
 + Other random tricks

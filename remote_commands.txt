@@ -1,0 +1,19 @@
+sudo apt update
+pip install gdown
+gdown 1HEyNw4M453n0tnuaAm9nwaCiLydQYnpo
+
+sudo apt install unzip
+unzip measurements.txt
+
+git clone https://github.com/lehuyduc/1brc-simd.git
+cd 1brc-simd
+
+sudo lshw -short -C memory.
+
+g++ -o test_copy_bandwidth copy_bandwidth.cpp -O3 -march=native -m64 -lpthread
+./test_copy_bandwidth
+
+
+rm main
+g++ -o main main.cpp -O3 -std=c++17 -march=native -m64 -lpthread
+time ./main measurements.txt

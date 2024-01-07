@@ -3,6 +3,9 @@
     "vector": "cpp",
     "utility": "cpp",
     "xstring": "cpp",
-    "iomanip": "cpp"
+    "iomanip": "cpp",
+    "iostream": "cpp",
+    "ios": "cpp",
+    "thread": "cpp"
   }
 }

@@ -54,7 +54,7 @@ struct HashBin {
     }
 };
 
-constexpr int N_THREADS = 32;
+constexpr int N_THREADS = 128;
 constexpr int N_AGGREGATE = (N_THREADS >= 16) ? (N_THREADS >> 2) : 1;
 std::unordered_map<string, Stats> partial_stats[N_AGGREGATE];
 std::unordered_map<string, Stats> final_recorded_stats;
@@ -333,7 +333,7 @@ int main(int argc, char* argv[])
     sort(results.begin(), results.end());
 
     // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,
-    ofstream fo("result.txt");
+    ofstream fo("result_valid3.txt");
     fo << fixed << setprecision(1);
     fo << "{";
     for (size_t i = 0; i < results.size(); i++) {
@@ -354,4 +354,3 @@ int main(int argc, char* argv[])
     cout << "Runtime inside main = " << timer.getCounterMsPrecise() << "ms\n";
     return 0;
 }
-

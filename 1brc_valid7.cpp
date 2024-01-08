@@ -55,7 +55,8 @@ struct HashBin {
     }
 };
 
-constexpr int N_THREADS = 32;
+// Change to 8 if you want to get comparable results to other implementations
+constexpr int N_THREADS = 128;
 constexpr int N_AGGREGATE = (N_THREADS >= 16) ? (N_THREADS >> 2) : 1;
 constexpr int N_AGGREGATE_LV2 = (N_AGGREGATE >= 32) ? (N_AGGREGATE >> 2) : 1;
 std::unordered_map<string, Stats> partial_stats[N_AGGREGATE];
@@ -76,6 +77,7 @@ void init_pow_small() {
 
 
 // https://en.algorithmica.org/hpc/simd/reduction/
+//inline uint32_t __attribute__((always_inline)) hsum(__m256i x) {
 uint32_t hsum(__m256i x) {
     __m128i l = _mm256_extracti128_si256(x, 0);
     __m128i h = _mm256_extracti128_si256(x, 1);
@@ -101,7 +103,7 @@ inline void hmap_insert(HashBin* hmap, uint32_t hash_value, const uint8_t* key, 
     while (hmap[hash_value].len > 0) {
       // SIMD string comparison      
       __m128i bin_chars = _mm_loadu_si128((__m128i*)hmap[hash_value].key);      
-      if (_mm_testc_si128(bin_chars, key_chars)) break;
+      if (likely(_mm_testc_si128(bin_chars, key_chars))) break;
       hash_value = (hash_value + 1) % NUM_BINS;    
     }
   } else {
@@ -134,71 +136,69 @@ inline void hmap_insert(HashBin* hmap, uint32_t hash_value, const uint8_t* key, 
 }
 
 template <bool SAFE_HASH = false>
-inline int handle_line(const uint8_t* data, HashBin* hmap)
+inline void handle_line(const uint8_t* data, HashBin* hmap, size_t &data_idx)
 {
-    int pos;
-    uint32_t myhash;
+  uint32_t pos;
+  uint32_t myhash;
 
-    // we read 16 bytes at a time with SIMD, so if the final line has < 16 bytes,
-    // this cause out-of-bound read.
-    // Most of the time it doesn't cause any error, but if the last extra bytes are past
-    // the final memory page provided by mmap, it will cause SIGBUS.
-    // So for the last few lines, we use safe code.
-    if constexpr (SAFE_HASH) {
-        pos = 0;
-        myhash = 0;
-        while (data[pos] != ';') {
-            myhash = myhash * SMALL + data[pos];
-            pos++;
-        }
-        myhash %= NUM_BINS;
+  // we read 16 bytes at a time with SIMD, so if the final line has < 16 bytes,
+  // this cause out-of-bound read.
+  // Most of the time it doesn't cause any error, but if the last extra bytes are past
+  // the final memory page provided by mmap, it will cause SIGBUS.
+  // So for the last few lines, we use safe code.
+  if constexpr (SAFE_HASH) {
+    pos = 0;
+    myhash = 0;
+    while (data[pos] != ';') {
+        myhash = myhash * SMALL + data[pos];
+        pos++;
+    }
+  }
+  else {
+    __m128i chars = _mm_loadu_si128((__m128i*)data);
+    __m128i separators = _mm_set1_epi8(';');        
+    __m128i compared = _mm_cmpeq_epi8(chars, separators);
+    uint32_t separator_mask = _mm_movemask_epi8(compared);
+
+    if (likely(separator_mask)) {
+      pos = __builtin_ctz(separator_mask);
+      uint32_t pow_start = 32 - pos;
+      
+      __m256i pow_vec2 = _mm256_loadu_si256((__m256i*)(pow_small + pow_start + 8));
+      __m256i data_vec2 = _mm256_cvtepu8_epi32(_mm_srli_si128(chars, 8));
+            
+      __m256i pow_vec1 = _mm256_loadu_si256((__m256i*)(pow_small + pow_start));      
+      __m256i data_vec1 = _mm256_cvtepu8_epi32(chars);
+      
+      myhash = hsum(_mm256_add_epi32(_mm256_mullo_epi32(pow_vec2, data_vec2), _mm256_mullo_epi32(pow_vec1, data_vec1)));      
     }
     else {
-        __m128i separators = _mm_set1_epi8(';');
-        __m128i chars = _mm_loadu_si128((__m128i*)data);
-        __m128i compared = _mm_cmpeq_epi8(chars, separators);
-        uint32_t separator_mask = _mm_movemask_epi8(compared);
-
-        if (likely(separator_mask)) {
-            pos = __builtin_ctz(separator_mask);
-            uint32_t pow_start = 32 - pos;
-
-            __m256i pow_vec1 = _mm256_loadu_si256((__m256i*)(pow_small + pow_start));
-            __m256i data_vec1 = _mm256_cvtepu8_epi32(chars);
-            __m256i summer1 = _mm256_mullo_epi32(pow_vec1, data_vec1);
-
-            __m256i pow_vec2 = _mm256_loadu_si256((__m256i*)(pow_small + pow_start + 8));
-            __m256i data_vec2 = _mm256_cvtepu8_epi32(_mm_srli_si128(chars, 8));
-            __m256i summer2 = _mm256_mullo_epi32(pow_vec2, data_vec2);
-
-            __m256i summer = _mm256_add_epi32(summer1, summer2);
-            myhash = hsum(summer);
-        }
-        else {
-            pos = 0;
-            myhash = 0;
-            while (data[pos] != ';') {
-                myhash = myhash * SMALL + data[pos];
-                pos++;
-            }
-        }
-
-        myhash %= NUM_BINS;
+      pos = 0;
+      myhash = 0;
+      while (data[pos] != ';') {
+          myhash = myhash * SMALL + data[pos];
+          pos++;
+      }
     }
+  }
 
-    // data[pos] = ';'.
-    // There are 4 cases: ;9.1, ;92.1, ;-9.1, ;-92.1
-    int key_end = pos;
-    pos += (data[pos + 1] == '-'); // after this, data[pos] = position right before first digit
-    bool negative = data[pos] == '-';
-    float case1 = (data[pos + 1] - 48) + 0.1f * (data[pos + 3] - 48); // 9.1
-    float case2 = (10 * (data[pos + 1] - 48) + (data[pos + 2] - 48)) + 0.1f * (data[pos + 4] - 48); // 92.1
-    float value = (data[pos + 2] == '.') ? case1 : case2;
-    if (negative) value = -value;
-    
-    hmap_insert<SAFE_HASH>(hmap, myhash, data, key_end, value);
+  // data[pos] = ';'.
+  // There are 4 cases: ;9.1, ;92.1, ;-9.1, ;-92.1
+  int key_end = pos;
+  pos += (data[pos + 1] == '-'); // after this, data[pos] = position right before first digit
+  float sign = (data[pos] == '-') ? -1 : 1;
+  myhash %= NUM_BINS; // let pos be computed first beacause it's needed earlier
 
-    return pos + 3 + (data[pos + 3] == '.') + 1 + 1;
+  float case1 = (data[pos + 1] - 48) + 0.1f * (data[pos + 3] - 48); // 9.1
+  float case2 = (10 * (data[pos + 1] - 48) + (data[pos + 2] - 48)) + 0.1f * (data[pos + 4] - 48); // 92.1
+  float value = (data[pos + 2] == '.') ? case1 : case2;  
+  value *= sign;
+
+  // intentionally move index updating before hmap_insert
+  // to improve register dependency chain
+  data_idx += pos + 3 + (data[pos + 3] == '.') + 1 + 1;
+  
+  hmap_insert<SAFE_HASH>(hmap, myhash, data, key_end, value);
 }
 
 void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_byte, size_t file_size)
@@ -213,19 +213,19 @@ void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_b
         // this should never happen since if dataset is too small, we use 1 thread
         throw std::runtime_error("idx >= to_byte error");        
     }
-        
+
     // Thread that process end block must not use SIMD in the last few lines
     // to prevent potential out-of-range access error.
     // This can happen if the file size satisfy: (file_size % page_size) > page_size - 16
     if (tid == N_THREADS - 1) to_byte -= 2 * MAX_KEY_LENGTH;
 
     while (idx < to_byte) {
-        idx += handle_line<false>(data + idx, hmaps[tid]);
+        handle_line<false>(data + idx, hmaps[tid], idx);
     }
 
     if (tid == N_THREADS - 1) {
         while (idx < file_size) {
-            idx += handle_line<true>(data + idx, hmaps[tid]);
+            handle_line<true>(data + idx, hmaps[tid], idx);
         }
     }
 }
@@ -279,7 +279,7 @@ int main(int argc, char* argv[])
     fstat(fd, &file_stat);
     size_t file_size = file_stat.st_size;
 
-    void* mapped_data_void = mmap(nullptr, file_size, PROT_READ, MAP_SHARED, fd, 0);
+    void* mapped_data_void = mmap(nullptr, file_size, PROT_READ, MAP_SHARED | MAP_HUGETLB, fd, 0);
 
     const uint8_t* data = reinterpret_cast<uint8_t*>(mapped_data_void);
     cout << "init mmap file cost = " << timer.getCounterMsPrecise() << "ms\n";
@@ -358,7 +358,7 @@ int main(int argc, char* argv[])
     sort(results.begin(), results.end());
 
     // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,
-    ofstream fo("result_valid5.txt");
+    ofstream fo("result.txt");
     fo << fixed << setprecision(1);
     fo << "{";
     for (size_t i = 0; i < results.size(); i++) {

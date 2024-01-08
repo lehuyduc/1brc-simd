@@ -1,0 +1,104 @@
+For some reason, this PC is slower on Monday than it was on Sunday.
+`munmap` for example takes 50% more time!!!
+
+The difference between `valid5` and `valid6` is improved code for `parallel process file cost`.
+So for the (current) result in the post, I subtract the difference in that part from `Runtime inside main` of `result_1brc_valid5_epyc9354`.
+I also use `user` time of `valid6` version. You can see that it's noticeably lower than `valid5` version.
+
+To see the difference between `valid5` and `valid6` more accurately, see benchmark files with `tr2950x`, this machine performance is stable.s
+
+// 128
+// init mmap file cost = 0.068061ms
+// Parallel process file cost = 169.666ms
+// Aggregate stats cost = 2.99631ms
+// Output stats cost = 0.621838ms
+// Runtime inside main = 173.331ms
+// Time to munmap = 372.592
+
+// real    0m0.611s
+// user    0m18.337s
+// sys     0m2.144s
+
+// 64
+// init mmap file cost = 0.065081ms
+// Parallel process file cost = 267.712ms
+// Aggregate stats cost = 2.27797ms
+// Output stats cost = 0.635678ms
+// Runtime inside main = 270.667ms
+// Time to munmap = 371.804
+
+// real    0m0.689s
+// user    0m15.769s
+// sys     0m1.350s
+
+// 32
+// init mmap file cost = 0.058791ms
+// Parallel process file cost = 540.486ms
+// Aggregate stats cost = 2.10713ms
+// Output stats cost = 0.620958ms
+// Runtime inside main = 543.255ms
+// Time to munmap = 368.966
+
+// real    0m0.935s
+// user    0m16.237s
+// sys     0m1.226s
+
+// 16
+// Parallel process file cost = 1060.92ms
+// Aggregate stats cost = 2.35567ms
+// Output stats cost = 0.832601ms
+// Runtime inside main = 1064.16ms
+// Time to munmap = 385.226
+
+// real    0m1.463s
+// user    0m16.029s
+// sys     0m1.133s
+
+
+// 8
+// init mmap file cost = 0.030941ms
+// Parallel process file cost = 2066.07ms
+// Aggregate stats cost = 1.96498ms
+// Output stats cost = 0.648908ms
+// Runtime inside main = 2068.74ms
+// Time to munmap = 358.602
+
+// real    0m2.437s
+// user    0m15.602s
+// sys     0m1.044s
+
+// 4
+// init mmap file cost = 0.03072ms
+// Parallel process file cost = 4106.29ms
+// Aggregate stats cost = 1.15346ms
+// Output stats cost = 0.975884ms
+// Runtime inside main = 4108.47ms
+// Time to munmap = 370.001
+
+// real    0m4.485s
+// user    0m15.598s
+// sys     0m1.064s
+
+// 2
+// init mmap file cost = 0.024081ms
+// Parallel process file cost = 8253.45ms
+// Aggregate stats cost = 0.875123ms
+// Output stats cost = 0.669309ms
+// Runtime inside main = 8255.06ms
+// Time to munmap = 365.726
+
+// real    0m8.624s
+// user    0m15.955s
+// sys     0m0.888s
+
+// 1
+// init mmap file cost = 0.02273ms
+// Parallel process file cost = 16158.5ms
+// Aggregate stats cost = 0.304544ms
+// Output stats cost = 0.657879ms
+// Runtime inside main = 16159.5ms
+// Time to munmap = 357.715
+
+// real    0m16.520s
+// user    0m15.624s
+// sys     0m0.892s

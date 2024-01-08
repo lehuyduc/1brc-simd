@@ -54,7 +54,7 @@ struct HashBin {
     }
 };
 
-constexpr int N_THREADS = 128;
+constexpr int N_THREADS = 32;
 constexpr int N_AGGREGATE = (N_THREADS >= 16) ? (N_THREADS >> 2) : 1;
 std::unordered_map<string, Stats> partial_stats[N_AGGREGATE];
 std::unordered_map<string, Stats> final_recorded_stats;

@@ -3,6 +3,8 @@ pip install gdown
 gdown 1HEyNw4M453n0tnuaAm9nwaCiLydQYnpo
 
 sudo apt install unzip
+sudo apt install nano
+
 unzip measurements.txt
 
 git clone https://github.com/lehuyduc/1brc-simd.git

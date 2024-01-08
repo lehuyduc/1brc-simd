@@ -1,0 +1,91 @@
+// 128
+// init mmap file cost = 0.068681ms
+// Parallel process file cost = 187.314ms
+// Aggregate stats cost = 4.8907ms
+// Output stats cost = 0.66355ms
+// Runtime inside main = 192.92ms
+
+// real    0m0.611s
+// user    0m21.599s
+// sys     0m1.338s
+
+// real    0m0.613s
+// user    0m21.491s
+// sys     0m1.407s
+
+// 64
+// init mmap file cost = 0.073271ms
+// Parallel process file cost = 308.354ms
+// Aggregate stats cost = 2.36812ms
+// Output stats cost = 0.637188ms
+// Runtime inside main = 311.401ms
+
+// real    0m0.661s
+// user    0m18.833s
+// sys     0m0.952s
+
+// 32
+// init mmap file cost = 0.067241ms
+// Parallel process file cost = 610.425ms
+// Aggregate stats cost = 1.79278ms
+// Output stats cost = 0.635299ms
+// Runtime inside main = 612.895ms
+
+// real    0m0.929s
+// user    0m18.716s
+// sys     0m0.939s
+
+// 16
+// init mmap file cost = 0.06663ms
+// Parallel process file cost = 1217.52ms
+// Aggregate stats cost = 3.49146ms
+// Output stats cost = 0.660659ms
+// Runtime inside main = 1221.71ms
+
+// real    0m1.519s
+// user    0m18.760s
+// sys     0m0.824s
+
+// 8
+// init mmap file cost = 0.051451ms
+// Parallel process file cost = 2416.55ms
+// Aggregate stats cost = 4.54076ms
+// Output stats cost = 0.657459ms
+// Runtime inside main = 2421.8ms
+
+// real    0m2.705s
+// user    0m18.808s
+// sys     0m0.769s
+
+// 4
+// init mmap file cost = 0.03277ms
+// Parallel process file cost = 4793.32ms
+// Aggregate stats cost = 2.80522ms
+// Output stats cost = 0.682529ms
+// Runtime inside main = 4796.87ms
+
+// real    0m5.075s
+// user    0m18.732s
+// sys     0m0.692s
+
+// 2
+// init mmap file cost = 0.033371ms
+// Parallel process file cost = 9627.22ms
+// Aggregate stats cost = 1.54075ms
+// Output stats cost = 0.665109ms
+// Runtime inside main = 9629.49ms
+
+// real    0m9.905s
+// user    0m18.813s
+// sys     0m0.700s
+
+// 1
+// init mmap file cost = 0.03425ms
+// Parallel process file cost = 19008.5ms
+// Aggregate stats cost = 0.869121ms
+// Output stats cost = 0.662588ms
+// Runtime inside main = 19010.1ms
+
+// real    0m19.285s
+// user    0m18.563s
+// sys     0m0.716s

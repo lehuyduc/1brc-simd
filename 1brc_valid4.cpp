@@ -23,7 +23,7 @@ using namespace std;
 
 constexpr uint32_t SMALL = 779347;
 constexpr int MAX_KEY_LENGTH = 100;
-constexpr int NUM_BINS = 16384; // enough to handle 10K unique keys requirement, and is more than enough for average case (< 500 keys)
+constexpr int NUM_BINS = 16384 * 2;
 
 struct Stats {
     int cnt;
@@ -49,14 +49,12 @@ struct HashBin {
     Stats stats;
 
     HashBin() {
-      // C++ zero-initialize global variable once for us.
-      // Commenting this save ~18ms of wall-clock time
-      // len = 0;
-      // memset(key, 0, sizeof(key));
+        len = 0;
+        memset(key, 0, sizeof(key));        
     }
 };
 
-constexpr int N_THREADS = 32;
+constexpr int N_THREADS = 128;
 constexpr int N_AGGREGATE = (N_THREADS >= 16) ? (N_THREADS >> 2) : 1;
 constexpr int N_AGGREGATE_LV2 = (N_AGGREGATE >= 32) ? (N_AGGREGATE >> 2) : 1;
 std::unordered_map<string, Stats> partial_stats[N_AGGREGATE];
@@ -359,7 +357,7 @@ int main(int argc, char* argv[])
     sort(results.begin(), results.end());
 
     // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,
-    ofstream fo("result.txt");
+    ofstream fo("result_valid4.txt");
     fo << fixed << setprecision(1);
     fo << "{";
     for (size_t i = 0; i < results.size(); i++) {
@@ -378,9 +376,5 @@ int main(int argc, char* argv[])
     cout << "Output stats cost = " << timer2.getCounterMsPrecise() << "ms\n";
 
     cout << "Runtime inside main = " << timer.getCounterMsPrecise() << "ms\n";
-
-    timer.startCounter();
-    munmap(mapped_data_void, file_size);
-    cout << "Time to munmap = " << timer.getCounterMsPrecise() << "\n";
     return 0;
 }

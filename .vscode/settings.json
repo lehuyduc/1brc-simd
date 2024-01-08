@@ -1,11 +1,14 @@
 {
   "files.associations": {
+    "*.cu": "cuda",
     "vector": "cpp",
     "utility": "cpp",
     "xstring": "cpp",
     "iomanip": "cpp",
     "iostream": "cpp",
     "ios": "cpp",
-    "thread": "cpp"
+    "thread": "cpp",
+    "iosfwd": "cpp",
+    "unordered_map": "cpp"
   }
 }

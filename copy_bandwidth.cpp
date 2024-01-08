@@ -18,10 +18,10 @@
 #include <cstring>
 using namespace std;
 
-constexpr int N_THREADS = 128;
+constexpr int N_THREADS = 32;
 volatile int dummy = 0;
 volatile int dummies[N_THREADS];
-constexpr size_t N = 3'200'000'000ULL;
+constexpr size_t N = 3'200'000'000ULL - (3'200'000'000ULL % N_THREADS);
 constexpr size_t N_LOOP = 10;
 int* A;
 const int* B;

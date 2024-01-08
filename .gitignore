@@ -1,2 +1,6 @@
 *fail*
 *analyze*
+*measurements*txt*
+main
+cpu_spec2.txt
+cpu_spec3.txt

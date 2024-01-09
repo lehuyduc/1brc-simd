@@ -372,7 +372,7 @@ int main(int argc, char* argv[])
         fo << station_name << "=" << mymin << "/" << avg << "/" << mymax;
         if (i < results.size() - 1) fo << ", ";
     }
-    fo << "}";
+    fo << "}\n";
     fo.close();
     cout << "Output stats cost = " << timer2.getCounterMsPrecise() << "ms\n";
 

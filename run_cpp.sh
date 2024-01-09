@@ -7,8 +7,7 @@ else
     num_threads=$(nproc --all)
 fi
 
-
-rm main
+rm -f main
 g++ -o main 1brc_final_valid.cpp -O3 -std=c++17 -march=native -m64 -lpthread -DN_THREADS_PARAM=$num_threads
 time ./main measurements.txt
 sha256sum result.txt

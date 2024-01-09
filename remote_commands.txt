@@ -2,8 +2,8 @@ sudo apt update
 pip install gdown
 gdown 1HEyNw4M453n0tnuaAm9nwaCiLydQYnpo
 
-sudo apt install unzip
-sudo apt install nano
+sudo apt install unzip nano
+
 
 unzip measurements.txt
 

@@ -38,7 +38,6 @@ Aggregate stats cost = 0.652658ms
 Output stats cost = 1.29682ms
 Runtime inside main = 3476.67ms
 Time to munmap = 155.913
-
 real    0m3.640s
 user    0m13.529s
 sys     0m0.460s
@@ -62,7 +61,6 @@ Aggregate stats cost = 0.22159ms
 Output stats cost = 1.24516ms
 Runtime inside main = 13475.4ms
 Time to munmap = 156.34
-
 real    0m13.635s
 user    0m13.234s
 sys     0m0.392s

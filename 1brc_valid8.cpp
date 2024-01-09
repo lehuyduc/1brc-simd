@@ -393,7 +393,7 @@ int main(int argc, char* argv[])
   sort(results.begin(), results.end());
 
   // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
-  ofstream fo("result.txt");
+  ofstream fo("result_valid8.txt");
   fo << fixed << setprecision(1);
   fo << "{";
   for (size_t i = 0; i < results.size(); i++) {
@@ -418,3 +418,17 @@ int main(int argc, char* argv[])
   cout << "Time to munmap = " << timer.getCounterMsPrecise() << "\n";
   return 0;
 }
+
+// Intentional ordering of struct Stats and HashBin
+// Using 32 threads
+// init mmap file cost = 0.034084ms
+// Parallel process file cost = 550.187ms
+// Aggregate stats cost = 1.82011ms
+// Output stats cost = 0.730827ms
+// Runtime inside main = 552.789ms
+// Time to munmap = 151.751
+
+// real	0m0.735s
+// user	0m16.729s
+// sys	0m0.724s
+

@@ -33,8 +33,8 @@ constexpr int N_THREADS = N_THREADS_PARAM;
 
 
 struct Stats {
-    int64_t sum;
     int cnt;
+    int64_t sum;
     int max;
     int min;
 
@@ -51,9 +51,9 @@ struct Stats {
 };
 
 struct HashBin {
-    Stats stats;
     int len;
-    uint8_t key[MAX_KEY_LENGTH];    
+    uint8_t key[MAX_KEY_LENGTH];
+    Stats stats;
 
     HashBin() {
       // C++ zero-initialize global variable by default
@@ -418,3 +418,84 @@ int main(int argc, char* argv[])
   cout << "Time to munmap = " << timer.getCounterMsPrecise() << "\n";
   return 0;
 }
+
+// Using 32 threads
+// init mmap file cost = 0.034135ms
+// Parallel process file cost = 598.938ms
+// Aggregate stats cost = 1.82661ms
+// Output stats cost = 0.729539ms
+// Runtime inside main = 601.55ms
+// Time to munmap = 157.381
+
+// real	0m0.791s
+// user	0m18.255s
+// sys	0m0.749s
+
+// inline hmap_insert
+// init mmap file cost = 0.037892ms
+// Parallel process file cost = 599.271ms
+// Aggregate stats cost = 1.8201ms
+// Output stats cost = 1.24343ms
+// Runtime inside main = 602.406ms
+// Time to munmap = 153.263
+
+// real	0m0.784s
+// user	0m18.318s
+// sys	0m0.672s
+
+// load pow_vec1 before if
+// Using 32 threads
+// init mmap file cost = 0.033243ms
+// Parallel process file cost = 597.827ms
+// Aggregate stats cost = 1.80038ms
+// Sort cost = 0.07915ms
+// Output stats cost = 0.647608ms
+// Runtime inside main = 600.413ms
+// Time to munmap = 156.77
+
+// real	0m0.787s
+// user	0m18.262s
+// sys	0m0.754s
+
+// sizeof(HashBin) == 128
+// 128
+// Using 32 threads
+// init mmap file cost = 0.033513ms
+// Parallel process file cost = 597.023ms
+// Aggregate stats cost = 1.91814ms
+// Sort cost = 0.133794ms
+// Output stats cost = 1.09207ms
+// Runtime inside main = 600.246ms
+// Time to munmap = 151.253
+
+// real	0m0.782s
+// user	0m17.894s
+// sys	0m0.825s
+
+// likely() in hash_insert
+// 128
+// Using 32 threads
+// init mmap file cost = 0.033904ms
+// Parallel process file cost = 597.315ms
+// Aggregate stats cost = 2.04686ms
+// Sort cost = 0.142451ms
+// Output stats cost = 1.50227ms
+// Runtime inside main = 601.087ms
+// Time to munmap = 152.209
+
+// real	0m0.783s
+// user	0m18.157s
+// sys	0m0.765s
+
+// using int stats
+// Using 32 threads
+// init mmap file cost = 0.037902ms
+// Parallel process file cost = 576.438ms
+// Aggregate stats cost = 1.84512ms
+// Output stats cost = 1.27486ms
+// Runtime inside main = 579.617ms
+// Time to munmap = 152.354
+
+// real	0m0.763s
+// user	0m17.358s
+// sys	0m0.754s

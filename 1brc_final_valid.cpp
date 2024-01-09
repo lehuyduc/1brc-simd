@@ -25,6 +25,13 @@ constexpr uint32_t SMALL = 779347;
 constexpr int MAX_KEY_LENGTH = 100;
 constexpr int NUM_BINS = 16384;
 
+#ifndef N_THREADS_PARAM
+constexpr int N_THREADS = 8; // to match evaluation server
+#else
+constexpr int N_THREADS = N_THREADS_PARAM;
+#endif
+
+
 struct Stats {
     int cnt;
     float sum;
@@ -55,8 +62,6 @@ struct HashBin {
     }
 };
 
-// Change to 8 if you want to get comparable results to other implementations
-constexpr int N_THREADS = 128;
 constexpr int N_AGGREGATE = (N_THREADS >= 16) ? (N_THREADS >> 2) : 1;
 constexpr int N_AGGREGATE_LV2 = (N_AGGREGATE >= 32) ? (N_AGGREGATE >> 2) : 1;
 std::unordered_map<string, Stats> partial_stats[N_AGGREGATE];
@@ -267,119 +272,120 @@ float roundTo1Decimal(float number) {
 
 int main(int argc, char* argv[])
 {
-    MyTimer timer, timer2;
-    timer.startCounter();    
-    init_pow_small();
+  cout << "Using " << N_THREADS << " threads\n";
+  MyTimer timer, timer2;
+  timer.startCounter();    
+  init_pow_small();
 
-    string file_path = "measurements.txt";
-    if (argc > 1) file_path = string(argv[1]);
+  string file_path = "measurements.txt";
+  if (argc > 1) file_path = string(argv[1]);
 
-    int fd = open(file_path.c_str(), O_RDONLY);
-    struct stat file_stat;
-    fstat(fd, &file_stat);
-    size_t file_size = file_stat.st_size;
+  int fd = open(file_path.c_str(), O_RDONLY);
+  struct stat file_stat;
+  fstat(fd, &file_stat);
+  size_t file_size = file_stat.st_size;
 
-    void* mapped_data_void = mmap(nullptr, file_size, PROT_READ, MAP_SHARED, fd, 0);
+  void* mapped_data_void = mmap(nullptr, file_size, PROT_READ, MAP_SHARED, fd, 0);
 
-    const uint8_t* data = reinterpret_cast<uint8_t*>(mapped_data_void);
-    cout << "init mmap file cost = " << timer.getCounterMsPrecise() << "ms\n";
-    
-    //----------------------
-    timer2.startCounter();
-    size_t idx = 0;
-    int n_threads = N_THREADS;
-    if (file_size / n_threads < 4 * MAX_KEY_LENGTH) n_threads = 1;
-    
-    size_t remaining_bytes = file_size - idx;
-    size_t bytes_per_thread = remaining_bytes / n_threads + 1;
-    vector<size_t> tstart, tend;
-    vector<std::thread> threads;
-    for (size_t tid = 0; tid < n_threads; tid++) {
-        size_t starter = idx + tid * bytes_per_thread;
-        size_t ender = idx + (tid + 1) * bytes_per_thread;
-        if (ender > file_size) ender = file_size;
-        threads.emplace_back([tid, data, starter, ender, file_size]() {
-            handle_line_raw(tid, data, starter, ender, file_size);
-        });
+  const uint8_t* data = reinterpret_cast<uint8_t*>(mapped_data_void);
+  cout << "init mmap file cost = " << timer.getCounterMsPrecise() << "ms\n";
+  
+  //----------------------
+  timer2.startCounter();
+  size_t idx = 0;
+  int n_threads = N_THREADS;
+  if (file_size / n_threads < 4 * MAX_KEY_LENGTH) n_threads = 1;
+  
+  size_t remaining_bytes = file_size - idx;
+  size_t bytes_per_thread = remaining_bytes / n_threads + 1;
+  vector<size_t> tstart, tend;
+  vector<std::thread> threads;
+  for (size_t tid = 0; tid < n_threads; tid++) {
+      size_t starter = idx + tid * bytes_per_thread;
+      size_t ender = idx + (tid + 1) * bytes_per_thread;
+      if (ender > file_size) ender = file_size;
+      threads.emplace_back([tid, data, starter, ender, file_size]() {
+          handle_line_raw(tid, data, starter, ender, file_size);
+      });
+  }
+
+  for (auto& thread : threads) thread.join();
+  cout << "Parallel process file cost = " << timer.getCounterMsPrecise() << "ms\n";
+
+  //----------------------
+  timer2.startCounter();
+  if constexpr(N_AGGREGATE > 1) {
+    threads.clear();
+    for (int tid = 0; tid < N_AGGREGATE; tid++) {
+      threads.emplace_back([tid]() {
+        parallel_aggregate(tid);
+      });
     }
-
     for (auto& thread : threads) thread.join();
-    cout << "Parallel process file cost = " << timer.getCounterMsPrecise() << "ms\n";
 
-    //----------------------
-    timer2.startCounter();
-    if constexpr(N_AGGREGATE > 1) {
-      threads.clear();
-      for (int tid = 0; tid < N_AGGREGATE; tid++) {
-        threads.emplace_back([tid]() {
-          parallel_aggregate(tid);
-        });
-      }
-      for (auto& thread : threads) thread.join();
+    //----- parallel reduction again
+    threads.clear();
+    for (int tid = 0; tid < N_AGGREGATE_LV2; tid++) {
+      threads.emplace_back([tid]() {
+        parallel_aggregate_lv2(tid);
+      });
+    }
+    for (auto& thread : threads) thread.join();
+    // now, the stats are aggregated into partial_stats[0 : N_AGGREGATE_LV2]
 
-      //----- parallel reduction again
-      threads.clear();
-      for (int tid = 0; tid < N_AGGREGATE_LV2; tid++) {
-        threads.emplace_back([tid]() {
-          parallel_aggregate_lv2(tid);
-        });
-      }
-      for (auto& thread : threads) thread.join();
-      // now, the stats are aggregated into partial_stats[0 : N_AGGREGATE_LV2]
-
-      for (int tid = 0; tid < N_AGGREGATE_LV2; tid++) {
-        for (auto& [key, value] : partial_stats[tid]) {
-          auto& stats = final_recorded_stats[key];
-          stats.cnt += value.cnt;
-          stats.sum += value.sum;
-          stats.max = max(stats.max, value.max);
-          stats.min = min(stats.min, value.min);
-        }
-      }
-    } else {
-      for (int tid = 0; tid < n_threads; tid++) {
-        for (int h = 0; h < NUM_BINS; h++) if (hmaps[tid][h].len > 0) {
-            auto& bin = hmaps[tid][h];            
-            auto& stats = final_recorded_stats[string(bin.key, bin.key + bin.len)];            
-            stats.cnt += bin.stats.cnt;
-            stats.sum += bin.stats.sum;
-            stats.max = max(stats.max, bin.stats.max);
-            stats.min = min(stats.min, bin.stats.min);
-        }
+    for (int tid = 0; tid < N_AGGREGATE_LV2; tid++) {
+      for (auto& [key, value] : partial_stats[tid]) {
+        auto& stats = final_recorded_stats[key];
+        stats.cnt += value.cnt;
+        stats.sum += value.sum;
+        stats.max = max(stats.max, value.max);
+        stats.min = min(stats.min, value.min);
       }
     }
-    cout << "Aggregate stats cost = " << timer2.getCounterMsPrecise() << "ms\n";
-
-    timer2.startCounter();
-    vector<pair<string, Stats>> results;
-    for (auto& [key, value] : final_recorded_stats) {
-        results.emplace_back(key, value);
+  } else {
+    for (int tid = 0; tid < n_threads; tid++) {
+      for (int h = 0; h < NUM_BINS; h++) if (hmaps[tid][h].len > 0) {
+          auto& bin = hmaps[tid][h];            
+          auto& stats = final_recorded_stats[string(bin.key, bin.key + bin.len)];            
+          stats.cnt += bin.stats.cnt;
+          stats.sum += bin.stats.sum;
+          stats.max = max(stats.max, bin.stats.max);
+          stats.min = min(stats.min, bin.stats.min);
+      }
     }
-    sort(results.begin(), results.end());
+  }
+  cout << "Aggregate stats cost = " << timer2.getCounterMsPrecise() << "ms\n";
 
-    // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,
-    ofstream fo("result.txt");
-    fo << fixed << setprecision(1);
-    fo << "{";
-    for (size_t i = 0; i < results.size(); i++) {
-        const auto& result = results[i];
-        const auto& station_name = result.first;
-        const auto& stats = result.second;
-        float avg = roundTo1Decimal(stats.sum / stats.cnt);
-        float mymax = roundTo1Decimal(stats.max);
-        float mymin = roundTo1Decimal(stats.min);
+  timer2.startCounter();
+  vector<pair<string, Stats>> results;
+  for (auto& [key, value] : final_recorded_stats) {
+      results.emplace_back(key, value);
+  }
+  sort(results.begin(), results.end());
 
-        fo << station_name << "=" << mymin << "/" << avg << "/" << mymax;
-        if (i < results.size() - 1) fo << ", ";
-    }
-    fo << "}";
-    fo.close();
-    cout << "Output stats cost = " << timer2.getCounterMsPrecise() << "ms\n";
+  // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,
+  ofstream fo("result.txt");
+  fo << fixed << setprecision(1);
+  fo << "{";
+  for (size_t i = 0; i < results.size(); i++) {
+      const auto& result = results[i];
+      const auto& station_name = result.first;
+      const auto& stats = result.second;
+      float avg = roundTo1Decimal(stats.sum / stats.cnt);
+      float mymax = roundTo1Decimal(stats.max);
+      float mymin = roundTo1Decimal(stats.min);
 
-    cout << "Runtime inside main = " << timer.getCounterMsPrecise() << "ms\n";
+      fo << station_name << "=" << mymin << "/" << avg << "/" << mymax;
+      if (i < results.size() - 1) fo << ", ";
+  }
+  fo << "}";
+  fo.close();
+  cout << "Output stats cost = " << timer2.getCounterMsPrecise() << "ms\n";
 
-    timer.startCounter();
-    munmap(mapped_data_void, file_size);
-    cout << "Time to munmap = " << timer.getCounterMsPrecise() << "\n";
-    return 0;
+  cout << "Runtime inside main = " << timer.getCounterMsPrecise() << "ms\n";
+
+  timer.startCounter();
+  munmap(mapped_data_void, file_size);
+  cout << "Time to munmap = " << timer.getCounterMsPrecise() << "\n";
+  return 0;
 }

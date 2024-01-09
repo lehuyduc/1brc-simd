@@ -307,3 +307,9 @@ int main(int argc, char **argv) {
   // exit(EXIT_SUCCESS);
 }
 
+// Runtime inside main = 343.277755ms
+// munmap cost = 216.992869ms
+// free memory cost = 19.699456ms
+// real    0m0.582s
+// user    0m29.590s
+// sys     0m2.204s

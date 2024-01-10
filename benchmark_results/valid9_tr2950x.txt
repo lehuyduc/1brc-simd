@@ -1,0 +1,65 @@
+Using 32 threads
+init mmap file cost = 0.035408ms
+Parallel process file cost = 535.282ms
+Aggregate stats cost = 1.74346ms
+Output stats cost = 0.707264ms
+Runtime inside main = 537.793ms
+Time to munmap = 155.225
+real    0m0.724s
+user    0m16.415s
+sys	0m0.587s
+
+Using 16 threads
+init mmap file cost = 0.039004ms
+Parallel process file cost = 853.1ms
+Aggregate stats cost = 1.32596ms
+Output stats cost = 1.20926ms
+Runtime inside main = 855.701ms
+Time to munmap = 152.213
+real	0m1.026s
+user	0m13.111s
+sys	0m0.484s
+
+Using 8 threads
+init mmap file cost = 0.044635ms
+Parallel process file cost = 1615.9ms
+Aggregate stats cost = 1.03299ms
+Output stats cost = 0.715951ms
+Runtime inside main = 1617.71ms
+Time to munmap = 152.749
+real	0m1.782s
+user	0m12.385s
+sys	0m0.532s
+
+Using 4 threads
+init mmap file cost = 0.033935ms
+Parallel process file cost = 3181.49ms
+Aggregate stats cost = 0.676586ms
+Output stats cost = 1.26503ms
+Runtime inside main = 3183.49ms
+Time to munmap = 151.079
+real	0m3.341s
+user	0m12.229s
+sys	0m0.528s
+
+Using 2 threads
+init mmap file cost = 0.023525ms
+Parallel process file cost = 6189.99ms
+Aggregate stats cost = 0.402896ms
+Output stats cost = 1.20867ms
+Runtime inside main = 6191.66ms
+Time to munmap = 151.294
+real	0m6.348s
+user	0m11.996s
+sys	0m0.460s
+
+Using 1 threads
+init mmap file cost = 0.017703ms
+Parallel process file cost = 12250ms
+Aggregate stats cost = 0.212494ms
+Output stats cost = 1.21887ms
+Runtime inside main = 12251.5ms
+Time to munmap = 151.757
+real	0m12.407s
+user	0m12.087s
+sys	0m0.312s

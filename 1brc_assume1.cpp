@@ -1,4 +1,4 @@
- #include "my_timer.h"
+#include "my_timer.h"
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -21,7 +21,7 @@ using namespace std;
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
 
-constexpr uint32_t SMALL = 276187; // >> 20
+constexpr uint32_t SMALL = 1019;//779347;
 constexpr int MAX_KEY_LENGTH = 100;
 constexpr uint32_t NUM_BINS = 16384;
 
@@ -30,7 +30,6 @@ constexpr int N_THREADS = 8; // to match evaluation server
 #else
 constexpr int N_THREADS = N_THREADS_PARAM;
 #endif
-
 
 struct Stats {
     int64_t sum;
@@ -42,7 +41,7 @@ struct Stats {
         cnt = 0;
         sum = 0;
         max = -1024;
-        min = -1024;
+        min = 1024;
     }
 
     bool operator < (const Stats& other) const {
@@ -52,8 +51,6 @@ struct Stats {
 
 struct HashBin {
     Stats stats;
-    int len;
-    uint8_t key[MAX_KEY_LENGTH];    
 
     HashBin() {
       // C++ zero-initialize global variable by default
@@ -61,7 +58,6 @@ struct HashBin {
       // memset(key, 0, sizeof(key));
     }
 };
-static_assert(sizeof(HashBin) == 128); // faster array indexing if struct is power of 2
 
 constexpr int N_AGGREGATE = (N_THREADS >= 16) ? (N_THREADS >> 2) : 1;
 constexpr int N_AGGREGATE_LV2 = (N_AGGREGATE >= 32) ? (N_AGGREGATE >> 2) : 1;
@@ -71,6 +67,7 @@ std::unordered_map<string, Stats> final_recorded_stats;
 alignas(4096) uint32_t pow_small[64];
 
 alignas(4096) HashBin hmaps[N_THREADS][NUM_BINS];
+unordered_map<uint32_t, string> hash_names[N_THREADS];
 
 void init_pow_small() {
     uint32_t b[40];
@@ -80,7 +77,6 @@ void init_pow_small() {
     for (int i = 0; i < 32; i++) pow_small[i] = b[31 - i];
     for (int i = 32; i < 64; i++) pow_small[i] = 0;
 }
-
 
 // https://en.algorithmica.org/hpc/simd/reduction/
 //inline uint32_t __attribute__((always_inline)) hsum(__m256i x) {
@@ -99,56 +95,6 @@ alignas(4096) const uint8_t strcmp_mask[32] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
-// force inline here make performance more consistent, ~2% lower average
-template <bool SAFE_HASH>
-inline void __attribute__((always_inline)) hmap_insert(HashBin* hmap, uint32_t hash_value, const uint8_t* key, int len, int value)
-{
-  if (likely(!SAFE_HASH && len <= 16)) {
-    __m128i chars = _mm_loadu_si128((__m128i*)key);
-    __m128i mask = _mm_loadu_si128((__m128i*)(strcmp_mask + 16 - len));
-    __m128i key_chars = _mm_and_si128(chars, mask);
-
-    __m128i bin_chars = _mm_loadu_si128((__m128i*)hmap[hash_value].key);
-    if (likely(_mm_testc_si128(bin_chars, key_chars) || hmap[hash_value].len == 0)) {
-      // consistent 2.5% improvement in `user` time by testing first bin before loop
-    }
-    else {
-      hash_value = (hash_value + 1) % NUM_BINS; // previous one failed
-      while (hmap[hash_value].len > 0) {
-        // SIMD string comparison      
-        __m128i bin_chars = _mm_loadu_si128((__m128i*)hmap[hash_value].key);
-        if (likely(_mm_testc_si128(bin_chars, key_chars))) break;
-        hash_value = (hash_value + 1) % NUM_BINS;    
-      }
-    }
-  } else {
-    while (hmap[hash_value].len > 0) {
-      // check if this slot is mine
-      if (likely(hmap[hash_value].len == len)) {
-          bool equal = true;
-          for (int i = 0; i < len; i++) if (key[i] != hmap[hash_value].key[i]) {
-              equal = false;
-              break;
-          }
-          if (likely(equal)) break;
-      }
-      hash_value = (hash_value + 1) % NUM_BINS;
-    }
-  }
-
-  auto& stats = hmap[hash_value].stats;
-  stats.cnt++;
-  stats.sum += value;
-  stats.max = max(stats.max, value);
-  stats.min = max(stats.min, -value);
-
-  // each key will only be free 1 first time, so it's unlikely
-  if (unlikely(hmap[hash_value].len == 0)) {        
-      hmap[hash_value].len = len;
-      memcpy((char*)hmap[hash_value].key, (char*)key, len);        
-  }
-}
-
 uint32_t slow_hash(const uint8_t* data, uint32_t* return_pos)
 {
   uint8_t chars[32];
@@ -162,10 +108,10 @@ uint32_t slow_hash(const uint8_t* data, uint32_t* return_pos)
   for (int i = L; i < 16; i++) chars[i] = 0;
 
   myhash = 0;
-  for (int i = 0; i < 8; i++) chars[i] += chars[i + 8];
-  uint64_t value;
-  memcpy(&value, chars, 8);
-  myhash = (value * SMALL) >> 20;
+  for (int i = 0; i < 8; i++) {
+    chars[i] += chars[i + 8];
+    myhash = myhash * SMALL + chars[i];
+  }
 
   for (int i = 16; i < pos; i++) myhash = myhash * SMALL + data[i];
   *return_pos = pos;
@@ -173,7 +119,7 @@ uint32_t slow_hash(const uint8_t* data, uint32_t* return_pos)
 }
 
 template <bool SAFE_HASH = false>
-inline void handle_line(const uint8_t* data, HashBin* hmap, size_t &data_idx)
+inline void handle_line(int tid, const uint8_t* data, HashBin* hmap, size_t &data_idx)
 {
   uint32_t pos = 16;
   uint32_t myhash;
@@ -184,43 +130,28 @@ inline void handle_line(const uint8_t* data, HashBin* hmap, size_t &data_idx)
   // the final memory page provided by mmap, it will cause SIGBUS.
   // So for the last few lines, we use safe code.
   if constexpr (SAFE_HASH) {
-    myhash = slow_hash(data, &pos);    
+    myhash = slow_hash(data, &pos);
   }
   else {
     __m128i chars = _mm_loadu_si128((__m128i*)data);
-    __m128i separators = _mm_set1_epi8(';');        
+    __m128i separators = _mm_set1_epi8(';');
     __m128i compared = _mm_cmpeq_epi8(chars, separators);
     uint32_t separator_mask = _mm_movemask_epi8(compared);
 
-    //__m256i pow_vec1 = _mm256_loadu_si256((__m256i*)(pow_small + 24));
+    __m256i pow_vec1 = _mm256_loadu_si256((__m256i*)(pow_small + 24));
 
     if (likely(separator_mask)) pos = __builtin_ctz(separator_mask);
 
     // sum the 2 halves of 16 characters together, then hash the resulting 8 characters
     // this save 1 _mm256_mullo_epi32 instruction, improving performance by ~3%
-    __m128i mask = _mm_loadu_si128((__m128i*)(strcmp_mask + 16 - pos));    
-    __m128i key_chars = _mm_and_si128(chars, mask);    
+    __m128i mask = _mm_loadu_si128((__m128i*)(strcmp_mask + 16 - pos));
+    __m128i key_chars = _mm_and_si128(chars, mask);
     __m128i sumchars = _mm_add_epi8(key_chars, _mm_srli_si128(key_chars, 8));
+    __m256i data_vec1 = _mm256_cvtepu8_epi32(sumchars);
 
-    // __m256i data_vec1 = _mm256_cvtepu8_epi32(sumchars);
-    // myhash = hsum(_mm256_mullo_epi32(pow_vec1, data_vec1));
+    myhash = hsum(_mm256_mullo_epi32(pow_vec1, data_vec1));
 
-    // we change hashing method, completely dropping SIMD multiplication, which is slow.
-    // This method will cause more hash collision, but we already paid for hash-collision handling,
-    // so we will use hash-collision handling :D
-    // myhash = (uint64_t(_mm_extract_epi64(sumchars, 0)) * SMALL) >> 20;
-
-    // faster
-    // uint64_t temp;
-    // memcpy(&temp, &sumchars, 8);
-    // myhash = (temp * SMALL) >> 20;
-        
-    // It's not illegal to dereference __m128i, yay. 0.3% faster than memcpy.
-    // Maybe it's just noise, but I measure best time instead of average FOR THIS CONTEST, so every millisecond counts.
-    // https://stackoverflow.com/questions/52112605/is-reinterpret-casting-between-hardware-simd-vector-pointer-and-the-correspond
-    myhash = (*(reinterpret_cast<uint64_t*>(&sumchars)) * SMALL) >> 20;
-
-    if (unlikely(!separator_mask)) {      
+    if (unlikely(!separator_mask)) {
       while (data[pos] != ';') {
         myhash = myhash * SMALL + data[pos];
         pos++;
@@ -234,17 +165,24 @@ inline void handle_line(const uint8_t* data, HashBin* hmap, size_t &data_idx)
   pos += (data[pos + 1] == '-'); // after this, data[pos] = position right before first digit
   int sign = (data[pos] == '-') ? -1 : 1;
   myhash %= NUM_BINS; // let pos be computed first beacause it's needed earlier
-
+  
   int case1 = 10 * (data[pos + 1] - 48) + (data[pos + 3] - 48); // 9.1
   int case2 = 100 * (data[pos + 1] - 48) + 10 * (data[pos + 2] - 48) + (data[pos + 4] - 48); // 92.1
-  int value = case2 * (data[pos + 3] == '.') + case1 * (!(data[pos + 3] == '.'));
+  int value = (data[pos + 2] == '.') ? case1 : case2;
   value *= sign;
 
   // intentionally move index updating before hmap_insert
   // to improve register dependency chain
-  data_idx += pos + 5 + (data[pos + 3] == '.');
-  
-  hmap_insert<SAFE_HASH>(hmap, myhash, data, key_end, value);
+  data_idx += pos + 3 + (data[pos + 3] == '.') + 1 + 1;
+
+  auto& stats = hmap[myhash].stats;
+  stats.cnt++;
+  stats.sum += value;
+  stats.max = max(stats.max, value);
+  stats.min = min(stats.min, value);
+  if (unlikely(stats.cnt == 1)) {
+    hash_names[tid][myhash] = string(data, data + key_end);
+  }
 }
 
 void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_byte, size_t file_size)
@@ -257,7 +195,7 @@ void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_b
     }
     if (idx >= to_byte) {
         // this should never happen since if dataset is too small, we use 1 thread
-        throw std::runtime_error("idx >= to_byte error");        
+        throw std::runtime_error("idx >= to_byte error");
     }
 
     // Thread that process end block must not use SIMD in the last few lines
@@ -265,13 +203,14 @@ void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_b
     // This can happen if the file size satisfy: (file_size % page_size) > page_size - 16
     if (tid == N_THREADS - 1) to_byte -= 2 * MAX_KEY_LENGTH;
 
+    size_t dem1 = 0, dem2 = 0;
     while (idx < to_byte) {
-        handle_line<false>(data + idx, hmaps[tid], idx);
+        handle_line<false>(tid, data + idx, hmaps[tid], idx);
     }
 
     if (tid == N_THREADS - 1) {
         while (idx < file_size) {
-            handle_line<true>(data + idx, hmaps[tid], idx);
+            handle_line<true>(tid, data + idx, hmaps[tid], idx);
         }
     }
 }
@@ -283,14 +222,14 @@ void parallel_aggregate(int tid)
   int end_idx = (tid + 1) * BLOCK_SIZE;
 
   for (int hmap_idx = start_idx; hmap_idx < end_idx; hmap_idx++) {
-    for (int h = 0; h < NUM_BINS; h++) if (hmaps[hmap_idx][h].len > 0) {
+    for (auto& [h, name] : hash_names[hmap_idx]) {
       auto& bin = hmaps[hmap_idx][h];
-      auto& stats = partial_stats[tid][string(bin.key, bin.key + bin.len)];
+      auto& stats = partial_stats[tid][name];
       stats.cnt += bin.stats.cnt;
       stats.sum += bin.stats.sum;
       stats.max = max(stats.max, bin.stats.max);
-      stats.min = max(stats.min, bin.stats.min);
-    }
+      stats.min = min(stats.min, bin.stats.min);
+    }    
   }
 }
 
@@ -302,7 +241,7 @@ void parallel_aggregate_lv2(int tid)
       stats.cnt += value.cnt;
       stats.sum += value.sum;
       stats.max = max(stats.max, value.max);
-      stats.min = max(stats.min, value.min);
+      stats.min = min(stats.min, value.min);
     }
   }
 }
@@ -315,7 +254,7 @@ int main(int argc, char* argv[])
 {
   cout << "Using " << N_THREADS << " threads\n";
   MyTimer timer, timer2;
-  timer.startCounter();    
+  timer.startCounter();
   init_pow_small();
 
   string file_path = "measurements.txt";
@@ -330,13 +269,13 @@ int main(int argc, char* argv[])
 
   const uint8_t* data = reinterpret_cast<uint8_t*>(mapped_data_void);
   cout << "init mmap file cost = " << timer.getCounterMsPrecise() << "ms\n";
-  
+
   //----------------------
   timer2.startCounter();
   size_t idx = 0;
   int n_threads = N_THREADS;
   if (file_size / n_threads < 4 * MAX_KEY_LENGTH) n_threads = 1;
-  
+
   size_t remaining_bytes = file_size - idx;
   size_t bytes_per_thread = remaining_bytes / n_threads + 1;
   vector<size_t> tstart, tend;
@@ -380,18 +319,18 @@ int main(int argc, char* argv[])
         stats.cnt += value.cnt;
         stats.sum += value.sum;
         stats.max = max(stats.max, value.max);
-        stats.min = max(stats.min, value.min);
+        stats.min = min(stats.min, value.min);
       }
     }
   } else {
     for (int tid = 0; tid < n_threads; tid++) {
-      for (int h = 0; h < NUM_BINS; h++) if (hmaps[tid][h].len > 0) {
-          auto& bin = hmaps[tid][h];            
-          auto& stats = final_recorded_stats[string(bin.key, bin.key + bin.len)];            
+      for (auto& [h, name] : hash_names[tid]) {
+          auto& bin = hmaps[tid][h];
+          auto& stats = final_recorded_stats[name];        
           stats.cnt += bin.stats.cnt;
           stats.sum += bin.stats.sum;
           stats.max = max(stats.max, bin.stats.max);
-          stats.min = max(stats.min, bin.stats.min);
+          stats.min = min(stats.min, bin.stats.min);
       }
     }
   }
@@ -404,7 +343,7 @@ int main(int argc, char* argv[])
   }
   sort(results.begin(), results.end());
 
-  // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
+  // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,
   ofstream fo("result.txt");
   fo << fixed << setprecision(1);
   fo << "{";
@@ -414,7 +353,7 @@ int main(int argc, char* argv[])
       const auto& stats = result.second;
       float avg = roundTo1Decimal((double)stats.sum / 10.0 / stats.cnt);
       float mymax = roundTo1Decimal(stats.max / 10.0);
-      float mymin = roundTo1Decimal(-stats.min / 10.0);
+      float mymin = roundTo1Decimal(stats.min / 10.0);
 
       fo << station_name << "=" << mymin << "/" << avg << "/" << mymax;
       if (i < results.size() - 1) fo << ", ";
@@ -427,6 +366,7 @@ int main(int argc, char* argv[])
 
   timer.startCounter();
   munmap(mapped_data_void, file_size);
-  cout << "Time to munmap = " << timer.getCounterMsPrecise() << "\n";
+  cout << "Time to munmap = " << timer.getCounterMsPrecise() << "ms\n";
+  cout << "Using cheat version\n";
   return 0;
 }

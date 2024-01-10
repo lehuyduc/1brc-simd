@@ -110,7 +110,7 @@ inline void __attribute__((always_inline)) hmap_insert(HashBin* hmap, uint32_t h
 
     __m128i bin_chars = _mm_loadu_si128((__m128i*)hmap[hash_value].key);
     if (likely(_mm_testc_si128(bin_chars, key_chars) || hmap[hash_value].len == 0)) {
-      // consistent 2.5% improvement in `user` time by testing first bin before loop
+      // consistent 2.5% improvement in `user` time
     }
     else {
       hash_value = (hash_value + 1) % NUM_BINS; // previous one failed
@@ -202,23 +202,12 @@ inline void handle_line(const uint8_t* data, HashBin* hmap, size_t &data_idx)
     __m128i key_chars = _mm_and_si128(chars, mask);    
     __m128i sumchars = _mm_add_epi8(key_chars, _mm_srli_si128(key_chars, 8));
 
-    // __m256i data_vec1 = _mm256_cvtepu8_epi32(sumchars);
-    // myhash = hsum(_mm256_mullo_epi32(pow_vec1, data_vec1));
-
     // we change hashing method, completely dropping SIMD multiplication, which is slow.
     // This method will cause more hash collision, but we already paid for hash-collision handling,
     // so we will use hash-collision handling :D
-    // myhash = (uint64_t(_mm_extract_epi64(sumchars, 0)) * SMALL) >> 20;
-
-    // faster
-    // uint64_t temp;
-    // memcpy(&temp, &sumchars, 8);
-    // myhash = (temp * SMALL) >> 20;
-        
-    // It's not illegal to dereference __m128i, yay. 0.3% faster than memcpy.
-    // Maybe it's just noise, but I measure best time instead of average FOR THIS CONTEST, so every millisecond counts.
-    // https://stackoverflow.com/questions/52112605/is-reinterpret-casting-between-hardware-simd-vector-pointer-and-the-correspond
-    myhash = (*(reinterpret_cast<uint64_t*>(&sumchars)) * SMALL) >> 20;
+    myhash = (uint64_t(_mm_extract_epi64(sumchars, 0)) * SMALL) >> 20;    
+    // __m256i data_vec1 = _mm256_cvtepu8_epi32(sumchars);
+    // myhash = hsum(_mm256_mullo_epi32(pow_vec1, data_vec1));
 
     if (unlikely(!separator_mask)) {      
       while (data[pos] != ';') {
@@ -405,7 +394,7 @@ int main(int argc, char* argv[])
   sort(results.begin(), results.end());
 
   // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
-  ofstream fo("result.txt");
+  ofstream fo("result_valid10.txt");
   fo << fixed << setprecision(1);
   fo << "{";
   for (size_t i = 0; i < results.size(); i++) {
@@ -430,3 +419,30 @@ int main(int argc, char* argv[])
   cout << "Time to munmap = " << timer.getCounterMsPrecise() << "\n";
   return 0;
 }
+
+// Lower quality non-perfect hash function, but faster
+// Using 32 threads
+// init mmap file cost = 0.033003ms
+// Parallel process file cost = 506.439ms
+// Aggregate stats cost = 2.50107ms
+// Output stats cost = 1.29632ms
+// Runtime inside main = 510.31ms
+// Time to munmap = 156.579
+
+// real	0m0.693s
+// user	0m14.791s
+// sys	0m0.810s
+
+// Using 1 threads
+// init mmap file cost = 0.015619ms
+// Parallel process file cost = 10383.3ms
+// Aggregate stats cost = 0.232472ms
+// Output stats cost = 1.22155ms
+// Runtime inside main = 10384.8ms
+// Time to munmap = 155.184
+
+// real	0m10.544s
+// user	0m10.157s
+// sys	0m0.380s
+
+//---------

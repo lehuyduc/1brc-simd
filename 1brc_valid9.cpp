@@ -21,7 +21,7 @@ using namespace std;
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
 
-constexpr uint32_t SMALL = 276187; // >> 20
+constexpr uint32_t SMALL = 1019;//779347;
 constexpr int MAX_KEY_LENGTH = 100;
 constexpr uint32_t NUM_BINS = 16384;
 
@@ -42,7 +42,7 @@ struct Stats {
         cnt = 0;
         sum = 0;
         max = -1024;
-        min = -1024;
+        min = 1024;
     }
 
     bool operator < (const Stats& other) const {
@@ -110,7 +110,7 @@ inline void __attribute__((always_inline)) hmap_insert(HashBin* hmap, uint32_t h
 
     __m128i bin_chars = _mm_loadu_si128((__m128i*)hmap[hash_value].key);
     if (likely(_mm_testc_si128(bin_chars, key_chars) || hmap[hash_value].len == 0)) {
-      // consistent 2.5% improvement in `user` time by testing first bin before loop
+      // consistent 2.5% improvement in `user` time
     }
     else {
       hash_value = (hash_value + 1) % NUM_BINS; // previous one failed
@@ -140,7 +140,7 @@ inline void __attribute__((always_inline)) hmap_insert(HashBin* hmap, uint32_t h
   stats.cnt++;
   stats.sum += value;
   stats.max = max(stats.max, value);
-  stats.min = max(stats.min, -value);
+  stats.min = min(stats.min, value);
 
   // each key will only be free 1 first time, so it's unlikely
   if (unlikely(hmap[hash_value].len == 0)) {        
@@ -162,10 +162,10 @@ uint32_t slow_hash(const uint8_t* data, uint32_t* return_pos)
   for (int i = L; i < 16; i++) chars[i] = 0;
 
   myhash = 0;
-  for (int i = 0; i < 8; i++) chars[i] += chars[i + 8];
-  uint64_t value;
-  memcpy(&value, chars, 8);
-  myhash = (value * SMALL) >> 20;
+  for (int i = 0; i < 8; i++) {
+    chars[i] += chars[i + 8];
+    myhash = myhash * SMALL + chars[i];
+  }
 
   for (int i = 16; i < pos; i++) myhash = myhash * SMALL + data[i];
   *return_pos = pos;
@@ -192,7 +192,7 @@ inline void handle_line(const uint8_t* data, HashBin* hmap, size_t &data_idx)
     __m128i compared = _mm_cmpeq_epi8(chars, separators);
     uint32_t separator_mask = _mm_movemask_epi8(compared);
 
-    //__m256i pow_vec1 = _mm256_loadu_si256((__m256i*)(pow_small + 24));
+    __m256i pow_vec1 = _mm256_loadu_si256((__m256i*)(pow_small + 24));
 
     if (likely(separator_mask)) pos = __builtin_ctz(separator_mask);
 
@@ -200,25 +200,10 @@ inline void handle_line(const uint8_t* data, HashBin* hmap, size_t &data_idx)
     // this save 1 _mm256_mullo_epi32 instruction, improving performance by ~3%
     __m128i mask = _mm_loadu_si128((__m128i*)(strcmp_mask + 16 - pos));    
     __m128i key_chars = _mm_and_si128(chars, mask);    
-    __m128i sumchars = _mm_add_epi8(key_chars, _mm_srli_si128(key_chars, 8));
+    __m128i sumchars = _mm_add_epi8(key_chars, _mm_srli_si128(key_chars, 8));    
+    __m256i data_vec1 = _mm256_cvtepu8_epi32(sumchars);
 
-    // __m256i data_vec1 = _mm256_cvtepu8_epi32(sumchars);
-    // myhash = hsum(_mm256_mullo_epi32(pow_vec1, data_vec1));
-
-    // we change hashing method, completely dropping SIMD multiplication, which is slow.
-    // This method will cause more hash collision, but we already paid for hash-collision handling,
-    // so we will use hash-collision handling :D
-    // myhash = (uint64_t(_mm_extract_epi64(sumchars, 0)) * SMALL) >> 20;
-
-    // faster
-    // uint64_t temp;
-    // memcpy(&temp, &sumchars, 8);
-    // myhash = (temp * SMALL) >> 20;
-        
-    // It's not illegal to dereference __m128i, yay. 0.3% faster than memcpy.
-    // Maybe it's just noise, but I measure best time instead of average FOR THIS CONTEST, so every millisecond counts.
-    // https://stackoverflow.com/questions/52112605/is-reinterpret-casting-between-hardware-simd-vector-pointer-and-the-correspond
-    myhash = (*(reinterpret_cast<uint64_t*>(&sumchars)) * SMALL) >> 20;
+    myhash = hsum(_mm256_mullo_epi32(pow_vec1, data_vec1));
 
     if (unlikely(!separator_mask)) {      
       while (data[pos] != ';') {
@@ -289,7 +274,7 @@ void parallel_aggregate(int tid)
       stats.cnt += bin.stats.cnt;
       stats.sum += bin.stats.sum;
       stats.max = max(stats.max, bin.stats.max);
-      stats.min = max(stats.min, bin.stats.min);
+      stats.min = min(stats.min, bin.stats.min);
     }
   }
 }
@@ -302,7 +287,7 @@ void parallel_aggregate_lv2(int tid)
       stats.cnt += value.cnt;
       stats.sum += value.sum;
       stats.max = max(stats.max, value.max);
-      stats.min = max(stats.min, value.min);
+      stats.min = min(stats.min, value.min);
     }
   }
 }
@@ -380,7 +365,7 @@ int main(int argc, char* argv[])
         stats.cnt += value.cnt;
         stats.sum += value.sum;
         stats.max = max(stats.max, value.max);
-        stats.min = max(stats.min, value.min);
+        stats.min = min(stats.min, value.min);
       }
     }
   } else {
@@ -391,7 +376,7 @@ int main(int argc, char* argv[])
           stats.cnt += bin.stats.cnt;
           stats.sum += bin.stats.sum;
           stats.max = max(stats.max, bin.stats.max);
-          stats.min = max(stats.min, bin.stats.min);
+          stats.min = min(stats.min, bin.stats.min);
       }
     }
   }
@@ -405,7 +390,7 @@ int main(int argc, char* argv[])
   sort(results.begin(), results.end());
 
   // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
-  ofstream fo("result.txt");
+  ofstream fo("result_valid9.txt");
   fo << fixed << setprecision(1);
   fo << "{";
   for (size_t i = 0; i < results.size(); i++) {
@@ -414,7 +399,7 @@ int main(int argc, char* argv[])
       const auto& stats = result.second;
       float avg = roundTo1Decimal((double)stats.sum / 10.0 / stats.cnt);
       float mymax = roundTo1Decimal(stats.max / 10.0);
-      float mymin = roundTo1Decimal(-stats.min / 10.0);
+      float mymin = roundTo1Decimal(stats.min / 10.0);
 
       fo << station_name << "=" << mymin << "/" << avg << "/" << mymax;
       if (i < results.size() - 1) fo << ", ";
@@ -430,3 +415,28 @@ int main(int argc, char* argv[])
   cout << "Time to munmap = " << timer.getCounterMsPrecise() << "\n";
   return 0;
 }
+
+// Manual branchless parsing
+// Using 32 threads
+// init mmap file cost = 0.035408ms
+// Parallel process file cost = 535.282ms
+// Aggregate stats cost = 1.74346ms
+// Output stats cost = 0.707264ms
+// Runtime inside main = 537.793ms
+// Time to munmap = 155.225
+
+// real	0m0.724s
+// user	0m16.415s
+// sys	0m0.587s
+
+// Using 1 threads
+// init mmap file cost = 0.017273ms
+// Parallel process file cost = 12278.9ms
+// Aggregate stats cost = 0.223264ms
+// Output stats cost = 1.23214ms
+// Runtime inside main = 12280.4ms
+// Time to munmap = 153.341
+
+// real	0m12.437s
+// user	0m12.047s
+// sys	0m0.372s

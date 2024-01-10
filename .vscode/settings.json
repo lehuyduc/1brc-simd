@@ -11,6 +11,9 @@
     "iosfwd": "cpp",
     "unordered_map": "cpp",
     "algorithm": "cpp",
-    "fstream": "cpp"
+    "fstream": "cpp",
+    "list": "cpp",
+    "cmath": "cpp",
+    "xhash": "cpp"
   }
 }

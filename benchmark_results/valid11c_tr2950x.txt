@@ -1,0 +1,23 @@
+Using 32 threads
+init mmap file cost = 0.035127ms
+Parallel process file cost = 483.652ms
+Aggregate stats cost = 1.91755ms
+Output stats cost = 0.714589ms
+Runtime inside main = 486.343ms
+Time to munmap = 155.437
+
+real    0m0.673s
+user    0m14.655s
+sys     0m0.684s
+
+Using 32 threads
+init mmap file cost = 0.033203ms
+Parallel process file cost = 484.346ms
+Aggregate stats cost = 1.68788ms
+Output stats cost = 0.707956ms
+Runtime inside main = 486.803ms
+Time to munmap = 152.111
+
+real    0m0.668s
+user    0m14.414s
+sys     0m0.844s

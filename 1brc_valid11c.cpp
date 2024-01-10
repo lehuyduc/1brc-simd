@@ -409,7 +409,7 @@ int main(int argc, char* argv[])
   sort(results.begin(), results.end());
 
   // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
-  ofstream fo("result.txt");
+  ofstream fo("result_11c.txt");
   fo << fixed << setprecision(1);
   fo << "{";
   for (size_t i = 0; i < results.size(); i++) {
@@ -434,3 +434,16 @@ int main(int argc, char* argv[])
   cout << "Time to munmap = " << timer.getCounterMsPrecise() << "\n";
   return 0;
 }
+
+// Force inline handle_line. Improve 0.25% speed or just noise ???
+// Using 32 threads
+// init mmap file cost = 0.034656ms
+// Parallel process file cost = 483.249ms
+// Aggregate stats cost = 1.82729ms
+// Output stats cost = 0.70985ms
+// Runtime inside main = 485.845ms
+// Time to munmap = 151.6
+
+// real    0m0.667s
+// user    0m14.643s
+// sys     0m0.728s

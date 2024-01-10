@@ -24,6 +24,8 @@
     "xtr1common": "cpp",
     "xutility": "cpp",
     "initializer_list": "cpp",
-    "random": "cpp"
+    "random": "cpp",
+    "format": "cpp",
+    "forward_list": "cpp"
   }
 }

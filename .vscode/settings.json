@@ -14,6 +14,16 @@
     "fstream": "cpp",
     "list": "cpp",
     "cmath": "cpp",
-    "xhash": "cpp"
+    "xhash": "cpp",
+    "chrono": "cpp",
+    "functional": "cpp",
+    "optional": "cpp",
+    "system_error": "cpp",
+    "type_traits": "cpp",
+    "xlocmon": "cpp",
+    "xtr1common": "cpp",
+    "xutility": "cpp",
+    "initializer_list": "cpp",
+    "random": "cpp"
   }
 }

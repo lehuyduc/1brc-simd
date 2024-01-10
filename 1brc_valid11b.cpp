@@ -405,7 +405,7 @@ int main(int argc, char* argv[])
   sort(results.begin(), results.end());
 
   // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
-  ofstream fo("result.txt");
+  ofstream fo("result_valid11b.txt");
   fo << fixed << setprecision(1);
   fo << "{";
   for (size_t i = 0; i < results.size(); i++) {
@@ -430,3 +430,41 @@ int main(int argc, char* argv[])
   cout << "Time to munmap = " << timer.getCounterMsPrecise() << "\n";
   return 0;
 }
+
+// Tested stats.min = max(stats.min, -value);
+// Didn't work, but forgot to change it back. AAAAAAAAAAAA
+// Using 32 threads
+// init mmap file cost = 0.037521ms
+// Parallel process file cost = 484.49ms
+// Aggregate stats cost = 2.16985ms
+// Output stats cost = 1.30678ms
+// Runtime inside main = 488.04ms
+// Time to munmap = 153.847
+
+// real    0m0.668s
+// user    0m14.652s
+// sys     0m0.657s
+
+// Using 32 threads
+// init mmap file cost = 0.033012ms
+// Parallel process file cost = 494.991ms
+// Aggregate stats cost = 1.95452ms
+// Output stats cost = 1.48549ms
+// Runtime inside main = 498.507ms
+// Time to munmap = 158.549
+
+// real    0m0.689s
+// user    0m14.598s
+// sys     0m0.788s
+
+// Using 32 threads
+// init mmap file cost = 0.034375ms
+// Parallel process file cost = 488.316ms
+// Aggregate stats cost = 2.01153ms
+// Output stats cost = 0.999618ms
+// Runtime inside main = 491.389ms
+// Time to munmap = 155.9
+
+// real    0m0.679s
+// user    0m14.831s
+// sys     0m0.690s

@@ -123,7 +123,7 @@ inline void __attribute__((always_inline)) hmap_insert(HashBin* hmap, uint32_t h
   if (unlikely(hmap[hash_value].len == 0)) {
       hmap[hash_value].len = len;
       memcpy(hmap[hash_value].key, key, len);
-      memset(hmap[hash_value].key + len, 100 - len, 0);
+      memset(hmap[hash_value].key + len, 0, 100 - len);
   }
 }
 

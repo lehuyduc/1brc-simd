@@ -186,7 +186,7 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
     //myhash = (*(reinterpret_cast<uint64_t*>(&sumchars)) * SMALL) >> 20;
 
     // okay so it was actually technically illegal. Am I stupid?
-    myhash = (_mm_cvtsi128_si64(sumchars) * SMALL) >> 20;
+    myhash = (uint64_t(_mm_cvtsi128_si64(sumchars)) * SMALL) >> 20;
 
     if (unlikely(!separator_mask)) {      
       while (data[pos] != ';') {

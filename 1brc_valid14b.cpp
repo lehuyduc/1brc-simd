@@ -86,7 +86,9 @@ inline void __attribute__((always_inline)) hmap_insert(HashBin* hmap, uint32_t h
     __m128i key_chars = _mm_and_si128(chars, mask);
 
     __m128i bin_chars = _mm_loadu_si128((__m128i*)hmap[hash_value].key);
-    if (likely(_mm_testc_si128(bin_chars, key_chars) || hmap[hash_value].len == 0)) {
+    // WTF THIS CODE ALWAYS HAS BEEN WRONG FROM THE START HOW DID IT PASSED SO MANY TESTS
+    __m128i neq = _mm_xor_si128(bin_chars, key_chars);
+    if (likely(_mm_test_all_zeros(neq, neq) || hmap[hash_value].len == 0)) {
       // consistent 2.5% improvement in `user` time by testing first bin before loop
     }
     else {
@@ -94,7 +96,8 @@ inline void __attribute__((always_inline)) hmap_insert(HashBin* hmap, uint32_t h
       while (hmap[hash_value].len > 0) {
         // SIMD string comparison      
         __m128i bin_chars = _mm_loadu_si128((__m128i*)hmap[hash_value].key);
-        if (likely(_mm_testc_si128(bin_chars, key_chars))) break;
+        __m128i neq = _mm_xor_si128(bin_chars, key_chars);
+        if (likely(_mm_test_all_zeros(neq, neq))) break;
         hash_value = (hash_value + 1) % NUM_BINS;    
       }
     }
@@ -406,7 +409,7 @@ int main(int argc, char* argv[])
   sort(results.begin(), results.end());
 
   // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
-  ofstream fo("result_valid14b.txt");
+  ofstream fo("result_valid14.txt");
   fo << fixed << setprecision(1);
   fo << "{";
   for (size_t i = 0; i < results.size(); i++) {

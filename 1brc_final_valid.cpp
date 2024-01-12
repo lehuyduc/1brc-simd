@@ -86,7 +86,9 @@ inline void __attribute__((always_inline)) hmap_insert(HashBin* hmap, uint32_t h
     __m128i key_chars = _mm_and_si128(chars, mask);
 
     __m128i bin_chars = _mm_loadu_si128((__m128i*)hmap[hash_value].key);
-    if (likely(_mm_testc_si128(bin_chars, key_chars) || hmap[hash_value].len == 0)) {
+    // WTF THIS CODE ALWAYS HAS BEEN WRONG FROM THE START HOW DID IT PASSED SO MANY TESTS
+    __m128i neq = _mm_xor_si128(bin_chars, key_chars);
+    if (likely(_mm_test_all_zeros(neq, neq) || hmap[hash_value].len == 0)) {
       // consistent 2.5% improvement in `user` time by testing first bin before loop
     }
     else {
@@ -94,7 +96,8 @@ inline void __attribute__((always_inline)) hmap_insert(HashBin* hmap, uint32_t h
       while (hmap[hash_value].len > 0) {
         // SIMD string comparison      
         __m128i bin_chars = _mm_loadu_si128((__m128i*)hmap[hash_value].key);
-        if (likely(_mm_testc_si128(bin_chars, key_chars))) break;
+        __m128i neq = _mm_xor_si128(bin_chars, key_chars);
+        if (likely(_mm_test_all_zeros(neq, neq))) break;
         hash_value = (hash_value + 1) % NUM_BINS;    
       }
     }
@@ -435,3 +438,45 @@ int main(int argc, char* argv[])
   if constexpr(DEBUG) cout << "Time to free memory = " << timer.getCounterMsPrecise() << "\n";
   return 0;
 }
+
+// Use safe instruction instead of trying to deref uint64_t* pointing to a __m128i*
+// Using 32 threads
+// Malloc cost = 0.006663
+// init mmap file cost = 0.01609ms
+// Parallel process file cost = 458.101ms
+// Aggregate stats cost = 1.73987ms
+// Output stats cost = 0.716246ms
+// Runtime inside main = 460.619ms
+// Time to munmap = 151.386
+// Time to free memory = 4.24478
+// real    0m0.619s
+// user    0m13.435s
+// sys     0m0.843s
+
+// Using 32 threads
+// Malloc cost = 0.00514
+// init mmap file cost = 0.013185ms
+// Parallel process file cost = 457.532ms
+// Aggregate stats cost = 1.90608ms
+// Output stats cost = 0.715004ms
+// Runtime inside main = 460.216ms
+// Time to munmap = 150.891
+// Time to free memory = 4.20632
+
+// real    0m0.618s
+// user    0m13.414s
+// sys     0m0.883s
+
+// Using 32 threads
+// Malloc cost = 0.005971
+// init mmap file cost = 0.009929ms
+// Parallel process file cost = 454.998ms
+// Aggregate stats cost = 1.87568ms
+// Output stats cost = 1.32216ms
+// Runtime inside main = 458.27ms
+// Time to munmap = 153.662
+// Time to free memory = 4.24626
+
+// real    0m0.619s
+// user    0m13.495s
+// sys     0m0.813s

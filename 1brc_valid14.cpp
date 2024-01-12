@@ -32,7 +32,7 @@ constexpr int N_THREADS = 8; // to match evaluation server
 #else
 constexpr int N_THREADS = N_THREADS_PARAM;
 #endif
-constexpr bool DEBUG = 0;
+constexpr bool DEBUG = 1;
 
 
 struct Stats {
@@ -403,7 +403,7 @@ int main(int argc, char* argv[])
   sort(results.begin(), results.end());
 
   // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
-  ofstream fo("result.txt");
+  ofstream fo("result_valid14.txt");
   fo << fixed << setprecision(1);
   fo << "{";
   for (size_t i = 0; i < results.size(); i++) {
@@ -432,3 +432,46 @@ int main(int argc, char* argv[])
   if constexpr(DEBUG) cout << "Time to free memory = " << timer.getCounterMsPrecise() << "\n";
   return 0;
 }
+
+// New SIMD method to find key_chars
+// Using 32 threads
+// Malloc cost = 0.008987
+// init mmap file cost = 0.013205ms
+// Parallel process file cost = 457.16ms
+// Aggregate stats cost = 1.84817ms
+// Output stats cost = 0.75763ms
+// Runtime inside main = 459.828ms
+// Time to munmap = 153.274
+// Time to free memory = 4.21629
+
+// real	0m0.620s
+// user	0m13.589s
+// sys	0m0.753s
+
+// Using 32 threads
+// Malloc cost = 0.007324
+// init mmap file cost = 0.012314ms
+// Parallel process file cost = 468.655ms
+// Aggregate stats cost = 1.87972ms
+// Output stats cost = 1.21758ms
+// Runtime inside main = 471.822ms
+// Time to munmap = 152.82
+// Time to free memory = 4.18369
+
+// real	0m0.632s
+// user	0m13.447s
+// sys	0m0.826s
+
+// Using 32 threads
+// Malloc cost = 0.007986
+// init mmap file cost = 0.018094ms
+// Parallel process file cost = 461.262ms
+// Aggregate stats cost = 1.69252ms
+// Output stats cost = 0.749705ms
+// Runtime inside main = 463.768ms
+// Time to munmap = 151.227
+// Time to free memory = 4.23384
+
+// real	0m0.622s
+// user	0m13.627s
+// sys	0m0.708s

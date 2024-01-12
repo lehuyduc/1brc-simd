@@ -32,7 +32,7 @@ constexpr int N_THREADS = 8; // to match evaluation server
 #else
 constexpr int N_THREADS = N_THREADS_PARAM;
 #endif
-constexpr bool DEBUG = 0;
+constexpr bool DEBUG = 1;
 
 
 struct Stats {
@@ -74,15 +74,20 @@ std::unordered_map<string, Stats> final_recorded_stats;
 HashBin* global_hmaps;
 alignas(4096) HashBin* hmaps[N_THREADS];
 
+// 16 all 1s followed by 16 all 0s
+// This is used to mask characters past the end of a string later
+alignas(4096) const uint8_t strcmp_mask[32] = {
+  255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
 // force inline here make performance more consistent, ~2% lower average
 template <bool SAFE_HASH>
 inline void __attribute__((always_inline)) hmap_insert(HashBin* hmap, uint32_t hash_value, const uint8_t* key, int len, int value)
 {
   if (likely(!SAFE_HASH && len <= 16)) {
     __m128i chars = _mm_loadu_si128((__m128i*)key);
-    __m128i index = _mm_setr_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
-    //__m128i mask = _mm_loadu_si128((__m128i*)(strcmp_mask + 16 - len));
-    __m128i mask = _mm_cmplt_epi8(index, _mm_set1_epi8(len));
+    __m128i mask = _mm_loadu_si128((__m128i*)(strcmp_mask + 16 - len));
     __m128i key_chars = _mm_and_si128(chars, mask);
 
     __m128i bin_chars = _mm_loadu_si128((__m128i*)hmap[hash_value].key);
@@ -166,8 +171,7 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
   }
   else {
     __m128i chars = _mm_loadu_si128((__m128i*)data);
-    __m128i index = _mm_setr_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
-    __m128i separators = _mm_set1_epi8(';');
+    __m128i separators = _mm_set1_epi8(';');        
     __m128i compared = _mm_cmpeq_epi8(chars, separators);
     uint32_t separator_mask = _mm_movemask_epi8(compared);
 
@@ -175,9 +179,8 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
 
     // sum the 2 halves of 16 characters together, then hash the resulting 8 characters
     // this save 1 _mm256_mullo_epi32 instruction, improving performance by ~3%
-    //__m128i mask = _mm_loadu_si128((__m128i*)(strcmp_mask + 16 - pos));
-    __m128i mask = _mm_cmplt_epi8(index, _mm_set1_epi8(pos));
-    __m128i key_chars = _mm_and_si128(chars, mask);
+    __m128i mask = _mm_loadu_si128((__m128i*)(strcmp_mask + 16 - pos));    
+    __m128i key_chars = _mm_and_si128(chars, mask);    
     __m128i sumchars = _mm_add_epi8(key_chars, _mm_srli_si128(key_chars, 8));
         
     // It's not illegal to dereference __m128i, yay. 0.3% faster than memcpy
@@ -403,7 +406,7 @@ int main(int argc, char* argv[])
   sort(results.begin(), results.end());
 
   // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
-  ofstream fo("result.txt");
+  ofstream fo("result_valid13.txt");
   fo << fixed << setprecision(1);
   fo << "{";
   for (size_t i = 0; i < results.size(); i++) {
@@ -432,3 +435,125 @@ int main(int argc, char* argv[])
   if constexpr(DEBUG) cout << "Time to free memory = " << timer.getCounterMsPrecise() << "\n";
   return 0;
 }
+
+// Reduce total time by malloc and initialize hmaps with multi threads.
+// Increase "runtime inside main", but before we were kinda cheating and didn't measure allocate/deallocate time
+
+// Each share call its own malloc
+// Using 32 threads
+// init mmap file cost = 0.016742ms
+// Parallel process file cost = 478.586ms
+// Aggregate stats cost = 1.93422ms
+// Output stats cost = 1.22766ms
+// Runtime inside main = 481.811ms
+// Time to munmap = 152.614
+// Time to free memory = 4.29337
+
+// real	0m0.642s
+// user	0m13.758s
+// sys	0m0.781s
+
+// Using 32 threads
+// init mmap file cost = 0.012845ms
+// Parallel process file cost = 480.101ms
+// Aggregate stats cost = 1.75474ms
+// Output stats cost = 0.742825ms
+// Runtime inside main = 482.658ms
+// Time to munmap = 156.123
+// Time to free memory = 4.30751
+// real	0m0.646s
+// user	0m13.845s
+// sys	0m0.822s
+
+// Using 32 threads
+// init mmap file cost = 0.013015ms
+// Parallel process file cost = 478.04ms
+// Aggregate stats cost = 1.65781ms
+// Output stats cost = 0.727044ms
+// Runtime inside main = 480.486ms
+// Time to munmap = 157.694
+// Time to free memory = 4.28862
+// real	0m0.646s
+// user	0m13.811s
+// sys	0m0.860s
+
+// Using 32 threads
+// init mmap file cost = 0.012704ms
+// Parallel process file cost = 476.39ms
+// Aggregate stats cost = 1.77943ms
+// Output stats cost = 0.714821ms
+// Runtime inside main = 478.946ms
+// Time to munmap = 151.003
+// Time to free memory = 4.28376
+
+// real	0m0.637s
+// user	0m13.832s
+// sys	0m0.816s
+
+//------------------
+// Using global hmaps
+// Using 32 threads
+// init mmap file cost = 0.012173ms
+// Parallel process file cost = 464.963ms
+// Aggregate stats cost = 1.81269ms
+// Output stats cost = 0.748034ms
+// Runtime inside main = 467.586ms
+// Time to munmap = 151.321
+// Time to free memory = 4.1961
+
+// real	0m0.626s
+// user	0m13.744s
+// sys	0m0.869s
+
+// Using 32 threads
+// init mmap file cost = 0.012424ms
+// Parallel process file cost = 464.929ms
+// Aggregate stats cost = 1.83051ms
+// Output stats cost = 0.728035ms
+// Runtime inside main = 467.537ms
+// Time to munmap = 150.93
+// Time to free memory = 4.1937
+
+// real	0m0.626s
+// user	0m13.931s
+// sys	0m0.679s
+
+// Using 32 threads
+// init mmap file cost = 0.012644ms
+// Parallel process file cost = 466.737ms
+// Aggregate stats cost = 1.83836ms
+// Output stats cost = 0.769273ms
+// Runtime inside main = 469.409ms
+// Time to munmap = 153.508
+// Time to free memory = 4.22801
+
+// real	0m0.630s
+// user	0m13.775s
+// sys	0m0.844s
+
+// Using 32 threads
+// init mmap file cost = 0.012624ms
+// Parallel process file cost = 471.327ms
+// Aggregate stats cost = 1.74016ms
+// Output stats cost = 0.728987ms
+// Runtime inside main = 473.858ms
+// Time to munmap = 151.031
+// Time to free memory = 4.23104
+
+// real	0m0.632s
+// user	0m13.802s
+// sys	0m0.852s
+
+// Using 32 threads
+// Malloc cost = 0.006492
+// init mmap file cost = 0.012544ms
+// Parallel process file cost = 466.05ms
+// Aggregate stats cost = 1.73596ms
+// Output stats cost = 0.708708ms
+// Runtime inside main = 468.555ms
+// Time to munmap = 151.208
+// Time to free memory = 4.1911
+
+// real	0m0.627s
+// user	0m13.852s
+// sys	0m0.804s

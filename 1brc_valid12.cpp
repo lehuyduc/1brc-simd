@@ -403,7 +403,7 @@ int main(int argc, char* argv[])
   sort(results.begin(), results.end());
 
   // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
-  ofstream fo("result.txt");
+  ofstream fo("result_valid12.txt");
   fo << fixed << setprecision(1);
   fo << "{";
   for (size_t i = 0; i < results.size(); i++) {
@@ -428,3 +428,40 @@ int main(int argc, char* argv[])
   cout << "Time to munmap = " << timer.getCounterMsPrecise() << "\n";
   return 0;
 }
+
+// Parsing hack by https://curiouscoding.nl/
+// Using 32 threads
+// init mmap file cost = 0.040617ms
+// Parallel process file cost = 463.599ms
+// Aggregate stats cost = 1.88676ms
+// Output stats cost = 0.989562ms
+// Runtime inside main = 466.543ms
+// Time to munmap = 158.395
+
+// real    0m0.656s
+// user    0m13.810s
+// sys     0m0.728s
+
+// Using 32 threads
+// init mmap file cost = 0.043102ms
+// Parallel process file cost = 459.904ms
+// Aggregate stats cost = 1.82115ms
+// Output stats cost = 1.01411ms
+// Runtime inside main = 462.804ms
+// Time to munmap = 150.8
+
+// real    0m0.643s
+// user    0m13.884s
+// sys     0m0.633s
+
+// Using 32 threads
+// init mmap file cost = 0.033294ms
+// Parallel process file cost = 461.913ms
+// Aggregate stats cost = 1.79002ms
+// Output stats cost = 0.725945ms
+// Runtime inside main = 464.488ms
+// Time to munmap = 155.224
+
+// real    0m0.650s
+// user    0m13.765s
+// sys     0m0.787s

@@ -25,14 +25,14 @@ using namespace std;
 
 constexpr uint32_t SMALL = 276187; // >> 20
 constexpr int MAX_KEY_LENGTH = 100;
-constexpr uint32_t NUM_BINS = 16384 * 2;
+constexpr uint32_t NUM_BINS = 16384;
 
 #ifndef N_THREADS_PARAM
 constexpr int N_THREADS = 8; // to match evaluation server
 #else
 constexpr int N_THREADS = N_THREADS_PARAM;
 #endif
-constexpr bool DEBUG = 0;
+constexpr bool DEBUG = 1;
 
 
 struct Stats {
@@ -406,7 +406,7 @@ int main(int argc, char* argv[])
   sort(results.begin(), results.end());
 
   // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
-  ofstream fo("result.txt");
+  ofstream fo("result_valid14b.txt");
   fo << fixed << setprecision(1);
   fo << "{";
   for (size_t i = 0; i < results.size(); i++) {
@@ -435,3 +435,45 @@ int main(int argc, char* argv[])
   if constexpr(DEBUG) cout << "Time to free memory = " << timer.getCounterMsPrecise() << "\n";
   return 0;
 }
+
+// Use safe instruction instead of trying to deref uint64_t* pointing to a __m128i*
+// Using 32 threads
+// Malloc cost = 0.006663
+// init mmap file cost = 0.01609ms
+// Parallel process file cost = 458.101ms
+// Aggregate stats cost = 1.73987ms
+// Output stats cost = 0.716246ms
+// Runtime inside main = 460.619ms
+// Time to munmap = 151.386
+// Time to free memory = 4.24478
+// real    0m0.619s
+// user    0m13.435s
+// sys     0m0.843s
+
+// Using 32 threads
+// Malloc cost = 0.00514
+// init mmap file cost = 0.013185ms
+// Parallel process file cost = 457.532ms
+// Aggregate stats cost = 1.90608ms
+// Output stats cost = 0.715004ms
+// Runtime inside main = 460.216ms
+// Time to munmap = 150.891
+// Time to free memory = 4.20632
+
+// real    0m0.618s
+// user    0m13.414s
+// sys     0m0.883s
+
+// Using 32 threads
+// Malloc cost = 0.005971
+// init mmap file cost = 0.009929ms
+// Parallel process file cost = 454.998ms
+// Aggregate stats cost = 1.87568ms
+// Output stats cost = 1.32216ms
+// Runtime inside main = 458.27ms
+// Time to munmap = 153.662
+// Time to free memory = 4.24626
+
+// real    0m0.619s
+// user    0m13.495s
+// sys     0m0.813s

@@ -1,0 +1,220 @@
+Bandwidth = 7.18499e+10 byte/s
+Bandwidth = 7.37311e+10 byte/s
+
+Using 128 threads
+Malloc cost = 0.006643
+init mmap file cost = 0.014758ms
+Parallel process file cost = 158.914ms
+Aggregate stats cost = 2.8271ms
+Output stats cost = 0.97466ms
+Runtime inside main = 162.759ms
+Time to munmap = 194.528
+Time to free memory = 9.77493
+
+real    0m0.371s
+user    0m15.278s
+sys     0m1.310s
+
+Using 128 threads
+Malloc cost = 0.006432
+init mmap file cost = 0.013525ms
+Parallel process file cost = 154.898ms
+Aggregate stats cost = 2.80914ms
+Output stats cost = 0.58275ms
+Runtime inside main = 158.327ms
+Time to munmap = 197.474
+Time to free memory = 9.79134
+
+real    0m0.369s
+user    0m15.389s
+sys     0m1.265s
+
+Using 128 threads
+Malloc cost = 0.006332
+init mmap file cost = 0.013666ms
+Parallel process file cost = 162.761ms
+Aggregate stats cost = 2.59964ms
+Output stats cost = 0.578262ms
+Runtime inside main = 165.972ms
+Time to munmap = 192.405
+Time to free memory = 9.81292
+
+real    0m0.372s
+user    0m15.357s
+sys     0m1.690s
+
+Using 128 threads
+Malloc cost = 0.006653
+init mmap file cost = 0.019256ms
+Parallel process file cost = 164.58ms
+Aggregate stats cost = 2.90747ms
+Output stats cost = 0.592678ms
+Runtime inside main = 168.114ms
+Time to munmap = 192.577
+Time to free memory = 9.53607
+
+real    0m0.374s
+user    0m15.381s
+sys     0m1.245s
+
+Using 128 threads
+Malloc cost = 0.006262
+init mmap file cost = 0.013004ms
+Parallel process file cost = 159.516ms
+Aggregate stats cost = 2.72175ms
+Output stats cost = 0.700111ms
+Runtime inside main = 162.978ms
+Time to munmap = 194.598
+Time to free memory = 9.77427
+
+real    0m0.371s
+user    0m15.499s
+sys     0m1.064s
+
+Using 64 threads
+Malloc cost = 0.006061
+init mmap file cost = 0.014647ms
+Parallel process file cost = 231.558ms
+Aggregate stats cost = 2.32858ms
+Output stats cost = 1.14539ms
+Runtime inside main = 235.081ms
+Time to munmap = 196.901
+Time to free memory = 4.66092
+
+real    0m0.440s
+user    0m12.055s
+sys     0m0.899s
+
+Using 32 threads
+Malloc cost = 0.006282
+init mmap file cost = 0.019036ms
+Parallel process file cost = 387.621ms
+Aggregate stats cost = 1.40057ms
+Output stats cost = 0.58269ms
+Runtime inside main = 389.645ms
+Time to munmap = 197.493
+Time to free memory = 3.17111
+
+real    0m0.593s
+user    0m11.790s
+sys     0m0.639s
+
+Using 16 threads
+Malloc cost = 0.007003
+init mmap file cost = 0.012764ms
+Parallel process file cost = 753.733ms
+Aggregate stats cost = 1.00815ms
+Output stats cost = 1.16909ms
+Runtime inside main = 755.946ms
+Time to munmap = 193.375
+Time to free memory = 1.8676
+
+real    0m0.954s
+user    0m11.693s
+sys     0m0.521s
+
+Using 8 threads
+Malloc cost = 0.005941
+init mmap file cost = 0.018014ms
+Parallel process file cost = 1359.25ms
+Aggregate stats cost = 0.859301ms
+Output stats cost = 0.606124ms
+Runtime inside main = 1360.75ms
+Time to munmap = 176.749
+Time to free memory = 0.93807
+
+real    0m1.541s
+user    0m10.517s
+sys     0m0.520s
+
+Using 4 threads
+Malloc cost = 0.005941
+init mmap file cost = 0.015689ms
+Parallel process file cost = 2641.39ms
+Aggregate stats cost = 0.648914ms
+Output stats cost = 0.979348ms
+Runtime inside main = 2643.07ms
+Time to munmap = 176.515
+Time to free memory = 0.537143
+
+real    0m2.823s
+user    0m10.312s
+sys     0m0.420s
+
+Using 2 threads
+Malloc cost = 0.006622
+init mmap file cost = 0.018856ms
+Parallel process file cost = 5279.59ms
+Aggregate stats cost = 0.217219ms
+Output stats cost = 1.21282ms
+Runtime inside main = 5281.06ms
+Time to munmap = 176.921
+Time to free memory = 0.276452
+
+real    0m5.461s
+user    0m10.273s
+sys     0m0.464s
+
+Using 1 threads
+Malloc cost = 0.005891
+init mmap file cost = 0.0163ms
+Parallel process file cost = 10511ms
+Aggregate stats cost = 0.129083ms
+Output stats cost = 0.507868ms
+Runtime inside main = 10511.7ms
+Time to munmap = 170.623
+Time to free memory = 0.14848
+
+real    0m10.685s
+user    0m10.291s
+sys     0m0.392s
+
+
+
+
+
+Architecture:                       x86_64
+CPU op-mode(s):                     32-bit, 64-bit
+Byte Order:                         Little Endian
+Address sizes:                      48 bits physical, 48 bits virtual
+CPU(s):                             128
+On-line CPU(s) list:                0-127
+Thread(s) per core:                 2
+Core(s) per socket:                 64
+Socket(s):                          1
+NUMA node(s):                       1
+Vendor ID:                          AuthenticAMD
+CPU family:                         25
+Model:                              8
+Model name:                         AMD Ryzen Threadripper PRO 5995WX 64-Cores
+Stepping:                           2
+Frequency boost:                    enabled
+CPU MHz:                            1789.291
+CPU max MHz:                        2700.0000
+CPU min MHz:                        1800.0000
+BogoMIPS:                           5389.80
+Virtualization:                     AMD-V
+L1d cache:                          2 MiB
+L1i cache:                          2 MiB
+L2 cache:                           32 MiB
+L3 cache:                           256 MiB
+NUMA node0 CPU(s):                  0-127
+Vulnerability Gather data sampling: Not affected
+Vulnerability Itlb multihit:        Not affected
+Vulnerability L1tf:                 Not affected
+Vulnerability Mds:                  Not affected
+Vulnerability Meltdown:             Not affected
+Vulnerability Mmio stale data:      Not affected
+Vulnerability Retbleed:             Not affected
+Vulnerability Spec store bypass:    Mitigation; Speculative Store Bypass disabled via prctl and seccomp
+Vulnerability Spectre v1:           Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:           Mitigation; Retpolines, IBPB conditional, IBRS_FW, STIBP always-on, RSB filling, PBRSB-eIBRS Not affected
+Vulnerability Srbds:                Not affected
+Vulnerability Tsx async abort:      Not affected
+Flags:                              fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm c
+                                    onstant_tsc rep_good nopl nonstop_tsc cpuid extd_apicid aperfmperf pni pclmulqdq monitor ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt aes 
+                                    xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core pe
+                                    rfctr_nb bpext perfctr_llc mwaitx cpb cat_l3 cdp_l3 invpcid_single hw_pstate ssbd mba ibrs ibpb stibp vmmcall fsgsbase bmi1 avx2 smep bmi2 erms inv
+                                    pcid cqm rdt_a rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local clzero irper
+                                    f xsaveerptr wbnoinvd arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload 
+                                    vgif umip pku ospke vaes vpclmulqdq rdpid overflow_recov succor smca

@@ -1,0 +1,170 @@
+Bandwidth = 1.14756e+11 byte/s
+Bandwidth = 1.19243e+11 byte/s
+
+Using 192 threads
+Malloc cost = 0.00841
+init mmap file cost = 0.0221ms
+Parallel process file cost = 291.815ms
+Aggregate stats cost = 4.77668ms
+Output stats cost = 1.51741ms
+Runtime inside main = 298.165ms
+Time to munmap = 308.381
+Time to free memory = 21.4484
+
+real    0m0.632s
+user    0m19.391s
+sys     0m12.286s
+root@C.8241492:~/1brc-simd$ time ./main
+Using 192 threads
+Malloc cost = 0.007
+init mmap file cost = 0.0149ms
+Parallel process file cost = 201.691ms
+Aggregate stats cost = 4.2248ms
+Output stats cost = 0.882434ms
+Runtime inside main = 206.84ms
+Time to munmap = 302.141
+Time to free memory = 20.5583
+
+real    0m0.534s
+user    0m20.657s
+sys     0m2.590s
+root@C.8241492:~/1brc-simd$ time ./main
+Using 192 threads
+Malloc cost = 0.00683
+init mmap file cost = 0.01528ms
+Parallel process file cost = 243.234ms
+Aggregate stats cost = 4.89799ms
+Output stats cost = 1.44719ms
+Runtime inside main = 249.634ms
+Time to munmap = 304.11
+Time to free memory = 20.5897
+
+real    0m0.579s
+user    0m20.382s
+sys     0m4.116s
+
+Using 192 threads
+Malloc cost = 0.00634
+init mmap file cost = 0.01426ms
+Parallel process file cost = 182.822ms
+Aggregate stats cost = 4.29897ms
+Output stats cost = 1.26328ms
+Runtime inside main = 188.435ms
+Time to munmap = 305.691
+Time to free memory = 21.2902
+
+real    0m0.520s
+user    0m20.268s
+sys     0m2.890s
+
+
+Using 128 threads
+Malloc cost = 0.00472
+init mmap file cost = 0.0108ms
+Parallel process file cost = 221.753ms
+Aggregate stats cost = 3.04692ms
+Output stats cost = 0.872523ms
+Runtime inside main = 225.718ms
+Time to munmap = 301.778
+Time to free memory = 14.5423
+
+real    0m0.545s
+user    0m19.387s
+sys     0m2.020s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+root@C.8241492:~/1brc-simd$ ./run.sh 128
+Using 128 threads
+Malloc cost = 0.00866
+init mmap file cost = 0.02331ms
+Parallel process file cost = 221.279ms
+Aggregate stats cost = 3.07564ms
+Output stats cost = 0.853453ms
+Runtime inside main = 225.256ms
+Time to munmap = 303.558
+Time to free memory = 14.7314
+
+real    0m0.548s
+user    0m19.404s
+sys     0m1.970s
+
+Using 1 threads
+Malloc cost = 0.00714
+init mmap file cost = 0.017221ms
+Parallel process file cost = 18364.6ms
+Aggregate stats cost = 0.174988ms
+Output stats cost = 0.885998ms
+Runtime inside main = 18365.7ms
+Time to munmap = 314.341
+Time to free memory = 0.189248
+
+real    0m18.683s
+user    0m17.892s
+sys     0m0.784s
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Architecture:                       x86_64
+CPU op-mode(s):                     32-bit, 64-bit
+Byte Order:                         Little Endian
+Address sizes:                      52 bits physical, 57 bits virtual
+CPU(s):                             192
+On-line CPU(s) list:                0-191
+Thread(s) per core:                 2
+Core(s) per socket:                 96
+Socket(s):                          1
+NUMA node(s):                       1
+Vendor ID:                          AuthenticAMD
+CPU family:                         25
+Model:                              17
+Model name:                         AMD EPYC 9654 96-Core Processor
+Stepping:                           1
+CPU MHz:                            1369.171
+CPU max MHz:                        2400.0000
+CPU min MHz:                        1500.0000
+BogoMIPS:                           4799.72
+Virtualization:                     AMD-V
+L1d cache:                          3 MiB
+L1i cache:                          3 MiB
+L2 cache:                           96 MiB
+L3 cache:                           384 MiB
+NUMA node0 CPU(s):                  0-191
+Vulnerability Gather data sampling: Not affected
+Vulnerability Itlb multihit:        Not affected
+Vulnerability L1tf:                 Not affected
+Vulnerability Mds:                  Not affected
+Vulnerability Meltdown:             Not affected
+Vulnerability Mmio stale data:      Not affected
+Vulnerability Retbleed:             Not affected
+Vulnerability Spec store bypass:    Mitigation; Speculative Store Bypass disabled via prctl and seccomp
+Vulnerability Spectre v1:           Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:           Mitigation; Retpolines, IBPB conditional, IBRS_FW, STIBP always-on, RSB filling, PBRSB-eIBRS Not affected
+Vulnerability Srbds:                Not affected
+Vulnerability Tsx async abort:      Not affected
+Flags:                              fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm c
+                                    onstant_tsc rep_good nopl nonstop_tsc cpuid extd_apicid aperfmperf pni pclmulqdq monitor ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt aes 
+                                    xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core pe
+                                    rfctr_nb bpext perfctr_llc mwaitx cat_l3 cdp_l3 invpcid_single hw_pstate ssbd mba ibrs ibpb stibp vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid
+                                     cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm
+                                    _occup_llc cqm_mbm_total cqm_mbm_local avx512_bf16 clzero irperf xsaveerptr wbnoinvd arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbya
+                                    sid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_
+                                    bitalg avx512_vpopcntdq rdpid overflow_recov succor smca flush_l1d

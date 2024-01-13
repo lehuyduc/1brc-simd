@@ -25,7 +25,7 @@ using namespace std;
 
 constexpr uint32_t SMALL = 276187; // >> 20
 constexpr int MAX_KEY_LENGTH = 100;
-constexpr uint32_t NUM_BINS = 16384 * 2;
+constexpr uint32_t NUM_BINS = 16384 * 4;
 
 #ifndef N_THREADS_PARAM
 constexpr int N_THREADS = 8; // to match evaluation server

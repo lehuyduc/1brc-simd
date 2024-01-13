@@ -1,0 +1,380 @@
+m:7584 host:1276 Norway, NO PRO WS WRX80E
+
+Bandwidth = 7.56104e+10 byte/s
+Bandwidth = 7.33598e+10 byte/s
+
+Using 128 threads
+Malloc cost = 0.006412
+init mmap file cost = 0.018254ms
+Parallel process file cost = 151.819ms
+Aggregate stats cost = 2.44415ms
+Output stats cost = 1.12667ms
+Runtime inside main = 155.424ms
+Time to munmap = 193.69
+Time to free memory = 9.48959
+
+real    0m0.362s
+user    0m15.441s
+sys     0m1.173s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 128 threads
+Malloc cost = 0.006522
+init mmap file cost = 0.019267ms
+Parallel process file cost = 166.521ms
+Aggregate stats cost = 2.88848ms
+Output stats cost = 0.95445ms
+Runtime inside main = 170.411ms
+Time to munmap = 195.999
+Time to free memory = 9.07362
+
+real    0m0.379s
+user    0m15.251s
+sys     0m1.566s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 128 threads
+Malloc cost = 0.007163
+init mmap file cost = 0.018606ms
+Parallel process file cost = 157.755ms
+Aggregate stats cost = 2.95822ms
+Output stats cost = 0.92259ms
+Runtime inside main = 161.676ms
+Time to munmap = 197.153
+Time to free memory = 9.32367
+
+real    0m0.372s
+user    0m15.318s
+sys     0m1.301s
+root@C.8241748:~/1brc-simd$ 
+root@C.8241748:~/1brc-simd$ time ./main
+Using 128 threads
+Malloc cost = 0.006742
+init mmap file cost = 0.013466ms
+Parallel process file cost = 173.288ms
+Aggregate stats cost = 3.02665ms
+Output stats cost = 1.18214ms
+Runtime inside main = 177.551ms
+Time to munmap = 195.817
+Time to free memory = 9.03205
+
+real    0m0.386s
+user    0m15.077s
+sys     0m1.806s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 128 threads
+Malloc cost = 0.006652
+init mmap file cost = 0.014066ms
+Parallel process file cost = 152.155ms
+Aggregate stats cost = 2.44852ms
+Output stats cost = 0.598279ms
+Runtime inside main = 155.241ms
+Time to munmap = 194.04
+Time to free memory = 9.50263
+
+real    0m0.362s
+user    0m15.564s
+sys     0m1.081s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 128 threads
+Malloc cost = 0.006443
+init mmap file cost = 0.013175ms
+Parallel process file cost = 177.35ms
+Aggregate stats cost = 3.21146ms
+Output stats cost = 1.1834ms
+Runtime inside main = 181.796ms
+Time to munmap = 197.152
+Time to free memory = 9.01284
+
+real    0m0.391s
+user    0m14.988s
+sys     0m1.816s
+
+Using 128 threads
+Malloc cost = 0.006532
+init mmap file cost = 0.013706ms
+Parallel process file cost = 154.474ms
+Aggregate stats cost = 2.57345ms
+Output stats cost = 0.581587ms
+Runtime inside main = 157.662ms
+Time to munmap = 193.858
+Time to free memory = 9.50653
+
+real    0m0.365s
+user    0m15.414s
+sys     0m1.190s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 128 threads
+Malloc cost = 0.006883
+init mmap file cost = 0.014047ms
+Parallel process file cost = 151.824ms
+Aggregate stats cost = 2.45326ms
+Output stats cost = 0.583831ms
+Runtime inside main = 154.897ms
+Time to munmap = 194.091
+Time to free memory = 9.33679
+
+real    0m0.362s
+user    0m15.607s
+sys     0m1.002s
+
+Using 64 threads
+Malloc cost = 0.006833
+init mmap file cost = 0.013796ms
+Parallel process file cost = 231.06ms
+Aggregate stats cost = 2.18111ms
+Output stats cost = 1.44066ms
+Runtime inside main = 234.736ms
+Time to munmap = 195.088
+Time to free memory = 4.76972
+
+real    0m0.438s
+user    0m12.049s
+sys     0m0.753s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 64 threads
+Malloc cost = 0.005851
+init mmap file cost = 0.013205ms
+Parallel process file cost = 206.945ms
+Aggregate stats cost = 1.72083ms
+Output stats cost = 0.573141ms
+Runtime inside main = 209.279ms
+Time to munmap = 198.484
+Time to free memory = 5.31067
+
+real    0m0.416s
+user    0m11.818s
+sys     0m0.950s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 64 threads
+Malloc cost = 0.005941
+init mmap file cost = 0.017503ms
+Parallel process file cost = 231.536ms
+Aggregate stats cost = 2.01753ms
+Output stats cost = 0.575957ms
+Runtime inside main = 234.164ms
+Time to munmap = 192.97
+Time to free memory = 4.87692
+
+real    0m0.435s
+user    0m12.089s
+sys     0m0.733s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 64 threads
+Malloc cost = 0.007264
+init mmap file cost = 0.017032ms
+Parallel process file cost = 232.04ms
+Aggregate stats cost = 1.98568ms
+Output stats cost = 0.57769ms
+Runtime inside main = 234.642ms
+Time to munmap = 200.413
+Time to free memory = 5.38692
+
+real    0m0.443s
+user    0m12.001s
+sys     0m0.942s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 64 threads
+Malloc cost = 0.007684
+init mmap file cost = 0.013575ms
+Parallel process file cost = 233.728ms
+Aggregate stats cost = 1.98988ms
+Output stats cost = 0.592298ms
+Runtime inside main = 236.35ms
+Time to munmap = 199.688
+Time to free memory = 4.8508
+
+real    0m0.444s
+user    0m12.033s
+sys     0m0.831s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 64 threads
+Malloc cost = 0.006402
+init mmap file cost = 0.013786ms
+Parallel process file cost = 230.456ms
+Aggregate stats cost = 1.99924ms
+Output stats cost = 0.58874ms
+Runtime inside main = 233.08ms
+Time to munmap = 193.356
+Time to free memory = 5.09867
+
+real    0m0.435s
+user    0m12.051s
+sys     0m0.739s
+
+Using 32 threads
+Malloc cost = 0.006924
+init mmap file cost = 0.020569ms
+Parallel process file cost = 386.718ms
+Aggregate stats cost = 1.39825ms
+Output stats cost = 0.558864ms
+Runtime inside main = 388.708ms
+Time to munmap = 193.599
+Time to free memory = 3.01529
+
+real    0m0.588s
+user    0m11.753s
+sys     0m0.642s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+root@C.8241748:~/1brc-simd$ time ./main
+Using 32 threads
+Malloc cost = 0.006742
+init mmap file cost = 0.013897ms
+Parallel process file cost = 387.395ms
+Aggregate stats cost = 1.33673ms
+Output stats cost = 0.681425ms
+Runtime inside main = 389.456ms
+Time to munmap = 193.613
+Time to free memory = 2.95598
+
+real    0m0.589s
+user    0m11.733s
+sys     0m0.674s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 32 threads
+Malloc cost = 0.006493
+init mmap file cost = 0.013065ms
+Parallel process file cost = 388.033ms
+Aggregate stats cost = 1.32619ms
+Output stats cost = 0.835405ms
+Runtime inside main = 390.23ms
+Time to munmap = 198.16
+Time to free memory = 2.37554
+
+real    0m0.594s
+user    0m11.813s
+sys     0m0.615s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 32 threads
+Malloc cost = 0.006442
+init mmap file cost = 0.013686ms
+Parallel process file cost = 388.234ms
+Aggregate stats cost = 1.43049ms
+Output stats cost = 0.963787ms
+Runtime inside main = 390.668ms
+Time to munmap = 197.622
+Time to free memory = 2.50209
+
+real    0m0.594s
+user    0m11.796s
+sys     0m0.632s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 32 threads
+Malloc cost = 0.007704
+init mmap file cost = 0.013836ms
+Parallel process file cost = 386.833ms
+Aggregate stats cost = 1.32532ms
+Output stats cost = 0.583671ms
+Runtime inside main = 388.775ms
+Time to munmap = 193.267
+Time to free memory = 2.72423
+
+real    0m0.588s
+user    0m11.691s
+sys     0m0.721s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 32 threads
+Malloc cost = 0.006392
+init mmap file cost = 0.013265ms
+Parallel process file cost = 387.164ms
+Aggregate stats cost = 1.36454ms
+Output stats cost = 0.575125ms
+Runtime inside main = 389.136ms
+Time to munmap = 193.148
+Time to free memory = 2.71081
+
+real    0m0.588s
+user    0m11.785s
+sys     0m0.608s
+
+root@C.8241748:~/1brc-simd$ ./run.sh 1
+Using 1 threads
+Malloc cost = 0.006422
+init mmap file cost = 0.015219ms
+Parallel process file cost = 10551.8ms
+Aggregate stats cost = 0.124224ms
+Output stats cost = 0.51972ms
+Runtime inside main = 10552.5ms
+Time to munmap = 171.644
+Time to free memory = 0.142279
+
+real    0m10.727s
+user    0m10.281s
+sys     0m0.444s
+
+root@C.8241748:~/1brc-simd$ time ./main
+Using 1 threads
+Malloc cost = 0.006402
+init mmap file cost = 0.013405ms
+Parallel process file cost = 10538.3ms
+Aggregate stats cost = 0.117762ms
+Output stats cost = 1.20572ms
+Runtime inside main = 10539.6ms
+Time to munmap = 180.229
+Time to free memory = 0.147649
+
+real    0m10.723s
+user    0m10.236s
+sys     0m0.484s
+
+
+//-----------------------------
+//-----------------------------
+//-----------------------------
+//-----------------------------
+
+
+17 parallel munmap
+Using 128 threads
+Malloc cost = 0.007524
+init mmap file cost = 0.014117ms
+Parallel process file cost = 673.565ms
+Aggregate stats cost = 4.59299ms
+Output stats cost = 1.83723ms
+Runtime inside main = 680.045ms
+Time to munmap = 0.000201
+Time to free memory = 14.1897
+
+real    0m0.698s
+user    0m19.428s
+sys     0m2.046s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 128 threads
+Malloc cost = 0.006192
+init mmap file cost = 0.018525ms
+Parallel process file cost = 599.666ms
+Aggregate stats cost = 2.95553ms
+Output stats cost = 1.23346ms
+Runtime inside main = 603.912ms
+Time to munmap = 0.00013
+Time to free memory = 12.3628
+
+real    0m0.620s
+user    0m18.595s
+sys     0m1.756s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 128 threads
+Malloc cost = 0.006482
+init mmap file cost = 0.018896ms
+Parallel process file cost = 580.88ms
+Aggregate stats cost = 2.74105ms
+Output stats cost = 1.19301ms
+Runtime inside main = 584.864ms
+Time to munmap = 0.00019
+Time to free memory = 11.9799
+
+real    0m0.601s
+user    0m20.627s
+sys     0m1.683s
+root@C.8241748:~/1brc-simd$ time ./main
+Using 128 threads
+Malloc cost = 0.006473
+init mmap file cost = 0.014327ms
+Parallel process file cost = 592.695ms
+Aggregate stats cost = 4.72561ms
+Output stats cost = 1.16748ms
+Runtime inside main = 598.644ms
+Time to munmap = 0.0002
+Time to free memory = 13.6146
+
+real    0m0.616s
+user    0m18.009s
+sys     0m1.905s

@@ -26,6 +26,7 @@ using namespace std;
 constexpr uint32_t SMALL = 276187; // >> 20
 constexpr int MAX_KEY_LENGTH = 100;
 constexpr uint32_t NUM_BINS = 16384;
+size_t PAGE_SIZE = sysconf(_SC_PAGESIZE);
 
 #ifndef N_THREADS_PARAM
 constexpr int N_THREADS = 8; // to match evaluation server
@@ -188,21 +189,11 @@ void find_next_line_start(const uint8_t* data, size_t N, size_t &idx)
   while (idx < N && data[idx - 1] != '\n') idx++;
 }
 
-void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_byte, size_t file_size)
+void handle_line_raw_internal(int tid, const uint8_t* data, size_t start_idx, size_t to_byte, size_t file_size)
 {
-  hmaps[tid] = global_hmaps + tid * NUM_BINS;
-
-  // use malloc because we don't need to fill key with 0
-  for (int i = 0; i < NUM_BINS; i++) {
-    hmaps[tid][i].stats.sum = 0;
-    hmaps[tid][i].stats.cnt = 0;
-    hmaps[tid][i].stats.max = -1024;
-    hmaps[tid][i].stats.min = 1024;
-    hmaps[tid][i].len = 0;      
+  if (start_idx != 0 && data[start_idx - 1] != '\n') {
+    throw std::runtime_error("handle_line_raw_internal error");
   }
-
-  size_t start_idx = from_byte;
-  find_next_line_start(data, to_byte, start_idx);  
 
   constexpr size_t ILP_LEVEL = 2;
   size_t BYTES_PER_THREAD = (to_byte - start_idx) / ILP_LEVEL;
@@ -226,12 +217,43 @@ void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_b
     handle_line<false>(data + idx1, hmaps[tid], idx1);
   }
 
-  // Just keeping it here EVEN THOUGH THE CODE IS NEVER EXECUTED make the program ~1% faster
-  if (tid == N_THREADS - 1) {
-    while (idx1 < file_size) {
-        handle_line<true>(data + idx1, hmaps[tid], idx1);
-    }
+  if (start_idx % PAGE_SIZE != 0) {
+    start_idx = (start_idx - start_idx % PAGE_SIZE) + PAGE_SIZE;    
   }
+  if (to_byte % PAGE_SIZE != 0) {
+    to_byte = to_byte - to_byte % PAGE_SIZE - 2 * PAGE_SIZE;
+  }
+
+  if (start_idx < to_byte) {
+    auto parallel_munmap = [tid, data, start_idx, to_byte]() {      
+      munmap((void*)(data + start_idx), (to_byte - start_idx));      
+    };
+    std::thread munmap_thread(parallel_munmap);
+    munmap_thread.detach();
+  }
+}
+
+void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_byte, size_t file_size)
+{
+  hmaps[tid] = global_hmaps + tid * NUM_BINS;
+
+  // use malloc because we don't need to fill key with 0
+  for (int i = 0; i < NUM_BINS; i++) {
+    hmaps[tid][i].stats.sum = 0;
+    hmaps[tid][i].stats.cnt = 0;
+    hmaps[tid][i].stats.max = -1024;
+    hmaps[tid][i].stats.min = 1024;
+    hmaps[tid][i].len = 0;      
+  }
+
+  size_t start_idx = from_byte;
+  find_next_line_start(data, to_byte, start_idx);
+
+  size_t mid = (from_byte + to_byte) / 2;
+  while (data[mid] != '\n') mid++;  
+
+  handle_line_raw_internal(tid, data, start_idx, mid, file_size);
+  handle_line_raw_internal(tid, data, mid + 1, to_byte, file_size);  
 }
 
 void parallel_aggregate(int tid)
@@ -293,14 +315,14 @@ int main(int argc, char* argv[])
 
   void* mapped_data_void = mmap(nullptr, file_size + 32, PROT_READ, MAP_SHARED, fd, 0);
 
-  const uint8_t* data = reinterpret_cast<uint8_t*>(mapped_data_void);
+  const uint8_t* data = reinterpret_cast<uint8_t*>(mapped_data_void);  
   if constexpr(DEBUG) cout << "init mmap file cost = " << timer2.getCounterMsPrecise() << "ms\n";
   
   //----------------------
   timer2.startCounter();
   size_t idx = 0;
   int n_threads = N_THREADS;
-  if (file_size / n_threads < 4 * MAX_KEY_LENGTH) n_threads = 1;
+  if (file_size / n_threads < 12 * MAX_KEY_LENGTH) n_threads = 1;
   
   size_t remaining_bytes = file_size - idx;
   size_t bytes_per_thread = remaining_bytes / n_threads + 1;
@@ -309,7 +331,7 @@ int main(int argc, char* argv[])
   for (int64_t tid = n_threads - 1; tid >= 0; tid--) {
       size_t starter = idx + tid * bytes_per_thread;
       size_t ender = idx + (tid + 1) * bytes_per_thread;
-      if (ender > file_size) ender = file_size;
+      if (ender > file_size) ender = file_size;      
       if (tid) {
         threads.emplace_back([tid, data, starter, ender, file_size]() {
           handle_line_raw(tid, data, starter, ender, file_size);
@@ -374,7 +396,7 @@ int main(int argc, char* argv[])
   sort(results.begin(), results.end());
 
   // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
-  ofstream fo("result_valid16.txt");
+  ofstream fo("result_valid17.txt");
   fo << fixed << setprecision(1);
   fo << "{";
   for (size_t i = 0; i < results.size(); i++) {
@@ -395,7 +417,7 @@ int main(int argc, char* argv[])
   if constexpr(DEBUG) cout << "Runtime inside main = " << timer.getCounterMsPrecise() << "ms\n";
 
   timer.startCounter();
-  munmap(mapped_data_void, file_size);
+  //munmap(mapped_data_void, file_size);
   if constexpr(DEBUG) cout << "Time to munmap = " << timer.getCounterMsPrecise() << "\n";
 
   timer.startCounter();  

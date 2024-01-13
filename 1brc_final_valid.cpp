@@ -93,8 +93,8 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
   // this save 1 _mm256_mullo_epi32 instruction, improving performance by ~3%
   //__m128i mask = _mm_loadu_si128((__m128i*)(strcmp_mask + 16 - pos));
   __m128i mask = _mm_cmplt_epi8(index, _mm_set1_epi8(pos));
-  __m128i key_chars = _mm_and_si128(chars, mask);
-  __m128i sumchars = _mm_add_epi8(key_chars, _mm_srli_si128(key_chars, 8));
+  __m128i key_chars = _mm_and_si128(chars, mask);  
+  __m128i sumchars = _mm_add_epi8(key_chars, _mm_unpackhi_epi64(key_chars, key_chars)); // 0.7% faster total program time compared to srli
 
   // okay so it was actually technically illegal. Am I stupid?
   myhash = (uint64_t(_mm_cvtsi128_si64(sumchars)) * SMALL) >> 20;
@@ -182,41 +182,56 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
   }
 }
 
+void find_next_line_start(const uint8_t* data, size_t N, size_t &idx)
+{
+  if (idx == 0) return;
+  while (idx < N && data[idx - 1] != '\n') idx++;
+}
+
 void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_byte, size_t file_size)
 {
-    // if use size_t(tid) * NUM_BINS instead of tid * NUM_BINS, total time becomes 2% slower. Wtf
-    hmaps[tid] = global_hmaps + tid * NUM_BINS;
+  hmaps[tid] = global_hmaps + tid * NUM_BINS;
 
-    // use malloc because we don't need to fill key with 0
-    for (int i = 0; i < NUM_BINS; i++) {
-      hmaps[tid][i].stats.sum = 0;
-      hmaps[tid][i].stats.cnt = 0;
-      hmaps[tid][i].stats.max = -1024;
-      hmaps[tid][i].stats.min = 1024;
-      hmaps[tid][i].len = 0;      
-    }
+  // use malloc because we don't need to fill key with 0
+  for (int i = 0; i < NUM_BINS; i++) {
+    hmaps[tid][i].stats.sum = 0;
+    hmaps[tid][i].stats.cnt = 0;
+    hmaps[tid][i].stats.max = -1024;
+    hmaps[tid][i].stats.min = 1024;
+    hmaps[tid][i].len = 0;      
+  }
 
-    size_t idx = from_byte;
-    // always start from beginning of a line
-    if (from_byte != 0 && data[from_byte - 1] != '\n') {
-        while (data[idx] != '\n') idx++;
-        idx++;
-    }
-    if (idx >= to_byte) {
-        // this should never happen since if dataset is too small, we use 1 thread
-        throw std::runtime_error("idx >= to_byte error");        
-    }
+  size_t start_idx = from_byte;
+  find_next_line_start(data, to_byte, start_idx);  
 
-    while (idx < to_byte) {
-        handle_line<false>(data + idx, hmaps[tid], idx);
-    }
+  constexpr size_t ILP_LEVEL = 2;
+  size_t BYTES_PER_THREAD = (to_byte - start_idx) / ILP_LEVEL;
+  size_t idx0 = start_idx;
+  size_t idx1 = start_idx + BYTES_PER_THREAD * 1;
+  
+  find_next_line_start(data, to_byte, idx1);  
 
-    // Just keeping it here EVEN THOUGH THE CODE IS NEVER EXECUTED make the program ~1% faster
-    if (tid == N_THREADS - 1) {
-        while (idx < file_size) {
-            handle_line<true>(data + idx, hmaps[tid], idx);
-        }
+  size_t end_idx0 = idx1 - 1;
+  size_t end_idx1 = to_byte;
+
+  while (likely(idx0 < end_idx0 && idx1 < end_idx1)) {
+    handle_line<false>(data + idx0, hmaps[tid], idx0);
+    handle_line<false>(data + idx1, hmaps[tid], idx1);    
+  }
+
+  while (idx0 < end_idx0) {
+    handle_line<false>(data + idx0, hmaps[tid], idx0);
+  }
+  while (idx1 < end_idx1) {
+    handle_line<false>(data + idx1, hmaps[tid], idx1);
+  }
+
+  // Just keeping it here EVEN THOUGH THE CODE IS NEVER EXECUTED make the program ~1% faster
+  if (tid == N_THREADS - 1) {
+    while (idx1 < file_size) {
+        handle_line<true>(data + idx1, hmaps[tid], idx1);
     }
+  }
 }
 
 void parallel_aggregate(int tid)

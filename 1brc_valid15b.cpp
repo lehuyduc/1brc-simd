@@ -93,8 +93,8 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
   // this save 1 _mm256_mullo_epi32 instruction, improving performance by ~3%
   //__m128i mask = _mm_loadu_si128((__m128i*)(strcmp_mask + 16 - pos));
   __m128i mask = _mm_cmplt_epi8(index, _mm_set1_epi8(pos));
-  __m128i key_chars = _mm_and_si128(chars, mask);
-  __m128i sumchars = _mm_add_epi8(key_chars, _mm_srli_si128(key_chars, 8));
+  __m128i key_chars = _mm_and_si128(chars, mask);  
+  __m128i sumchars = _mm_add_epi8(key_chars, _mm_unpackhi_epi64(key_chars, key_chars)); // 0.7% faster total program time compared to srli
 
   // okay so it was actually technically illegal. Am I stupid?
   myhash = (uint64_t(_mm_cvtsi128_si64(sumchars)) * SMALL) >> 20;
@@ -358,7 +358,7 @@ int main(int argc, char* argv[])
   sort(results.begin(), results.end());
 
   // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
-  ofstream fo("result_valid15.txt");
+  ofstream fo("result_valid15b.txt");
   fo << fixed << setprecision(1);
   fo << "{";
   for (size_t i = 0; i < results.size(); i++) {
@@ -388,87 +388,75 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-// Trying to remove SAFE_HASH and simplify hmap_insert code
+// Use _mm_unpackhi_epi64 to horizontal sum
+// ~0.7% faster, measurable
+
 // Using 32 threads
-// Malloc cost = 0.006412
-// init mmap file cost = 0.012484ms
-// Parallel process file cost = 459.44ms
-// Aggregate stats cost = 1.76051ms
-// Output stats cost = 0.723936ms
-// Runtime inside main = 461.983ms
-// Time to munmap = 150.296
-// Time to free memory = 4.17061
+// Malloc cost = 0.006192
+// init mmap file cost = 0.014388ms
+// Parallel process file cost = 455.143ms
+// Aggregate stats cost = 1.91473ms
+// Output stats cost = 0.723815ms
+// Runtime inside main = 457.83ms
+// Time to munmap = 151.056
+// Time to free memory = 4.18131
+
+// real    0m0.616s
+// user    0m13.556s
+// sys     0m0.757s
+
+// Using 32 threads
+// Malloc cost = 0.007203
+// init mmap file cost = 0.013185ms
+// Parallel process file cost = 455.532ms
+// Aggregate stats cost = 1.68569ms
+// Output stats cost = 0.711561ms
+// Runtime inside main = 457.989ms
+// Time to munmap = 156.654
+// Time to free memory = 4.16626
+
+// real    0m0.622s
+// user    0m13.355s
+// sys     0m0.820s
+
+// Using 32 threads
+// Malloc cost = 0.006632
+// init mmap file cost = 0.017083ms
+// Parallel process file cost = 457.505ms
+// Aggregate stats cost = 1.6266ms
+// Output stats cost = 0.745546ms
+// Runtime inside main = 459.938ms
+// Time to munmap = 150.568
+// Time to free memory = 4.18492
+
+// real    0m0.618s
+// user    0m13.474s
+// sys     0m0.677s
+
+// Using 32 threads
+// Malloc cost = 0.007304
+// init mmap file cost = 0.012624ms
+// Parallel process file cost = 457.899ms
+// Aggregate stats cost = 1.76498ms
+// Output stats cost = 0.722202ms
+// Runtime inside main = 460.448ms
+// Time to munmap = 151.987
+// Time to free memory = 4.17975
 
 // real    0m0.619s
-// user    0m13.504s
-// sys     0m0.777s
-
-// Using 32 threads
-// Malloc cost = 0.006743
-// init mmap file cost = 0.016651ms
-// Parallel process file cost = 456.533ms
-// Aggregate stats cost = 1.971ms
-// Output stats cost = 0.71056ms
-// Runtime inside main = 459.279ms
-// Time to munmap = 150.816
-// Time to free memory = 4.1434
-
-// real    0m0.617s
-// user    0m13.326s
-// sys     0m0.920s
-
-// Using 32 threads
-// Malloc cost = 0.006312
-// init mmap file cost = 0.017302ms
-// Parallel process file cost = 457.354ms
-// Aggregate stats cost = 1.76002ms
-// Output stats cost = 0.752059ms
-// Runtime inside main = 459.928ms
-// Time to munmap = 160
-// Time to free memory = 4.20289
-
-// real    0m0.627s
-// user    0m13.588s
-// sys     0m0.785s
-
-// Using 32 threads
-// Malloc cost = 0.006532
-// init mmap file cost = 0.015089ms
-// Parallel process file cost = 457.72ms
-// Aggregate stats cost = 1.7806ms
-// Output stats cost = 0.748373ms
-// Runtime inside main = 460.31ms
-// Time to munmap = 151.989
-// Time to free memory = 4.13063
-
-// real    0m0.619s
-// user    0m13.487s
-// sys     0m0.730s
-
-// Using 32 threads
-// Malloc cost = 0.006884
-// init mmap file cost = 0.012333ms
-// Parallel process file cost = 457.024ms
-// Aggregate stats cost = 1.80579ms
-// Output stats cost = 0.739736ms
-// Runtime inside main = 459.631ms
-// Time to munmap = 156.907
-// Time to free memory = 4.21741
-
-// real    0m0.624s
-// user    0m13.433s
-// sys     0m0.806s
+// user    0m13.376s
+// sys     0m0.851s
 
 // Using 1 threads
-// Malloc cost = 0.007093
-// init mmap file cost = 0.014027ms
-// Parallel process file cost = 9698.43ms
-// Aggregate stats cost = 0.187015ms
-// Output stats cost = 0.771626ms
-// Runtime inside main = 9699.43ms
-// Time to munmap = 149.705
-// Time to free memory = 0.150106
+// Malloc cost = 0.006272
+// init mmap file cost = 0.018866ms
+// Parallel process file cost = 9642.82ms
+// Aggregate stats cost = 0.180413ms
+// Output stats cost = 0.707093ms
+// Runtime inside main = 9643.75ms
+// Time to munmap = 149.784
+// Time to free memory = 0.143813
 
-// real    0m9.852s
-// user    0m9.496s
-// sys     0m0.348s
+// real    0m9.796s
+// user    0m9.426s
+// sys     0m0.364s

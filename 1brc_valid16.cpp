@@ -93,8 +93,8 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
   // this save 1 _mm256_mullo_epi32 instruction, improving performance by ~3%
   //__m128i mask = _mm_loadu_si128((__m128i*)(strcmp_mask + 16 - pos));
   __m128i mask = _mm_cmplt_epi8(index, _mm_set1_epi8(pos));
-  __m128i key_chars = _mm_and_si128(chars, mask);
-  __m128i sumchars = _mm_add_epi8(key_chars, _mm_srli_si128(key_chars, 8));
+  __m128i key_chars = _mm_and_si128(chars, mask);  
+  __m128i sumchars = _mm_add_epi8(key_chars, _mm_unpackhi_epi64(key_chars, key_chars)); // 0.7% faster total program time compared to srli
 
   // okay so it was actually technically illegal. Am I stupid?
   myhash = (uint64_t(_mm_cvtsi128_si64(sumchars)) * SMALL) >> 20;
@@ -182,40 +182,56 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
   }
 }
 
+void find_next_line_start(const uint8_t* data, size_t N, size_t &idx)
+{
+  if (idx == 0) return;
+  while (idx < N && data[idx - 1] != '\n') idx++;
+}
+
 void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_byte, size_t file_size)
-{    
-    hmaps[tid] = global_hmaps + tid * NUM_BINS;
+{
+  hmaps[tid] = global_hmaps + tid * NUM_BINS;
 
-    // use malloc because we don't need to fill key with 0
-    for (int i = 0; i < NUM_BINS; i++) {
-      hmaps[tid][i].stats.sum = 0;
-      hmaps[tid][i].stats.cnt = 0;
-      hmaps[tid][i].stats.max = -1024;
-      hmaps[tid][i].stats.min = 1024;
-      hmaps[tid][i].len = 0;      
-    }
+  // use malloc because we don't need to fill key with 0
+  for (int i = 0; i < NUM_BINS; i++) {
+    hmaps[tid][i].stats.sum = 0;
+    hmaps[tid][i].stats.cnt = 0;
+    hmaps[tid][i].stats.max = -1024;
+    hmaps[tid][i].stats.min = 1024;
+    hmaps[tid][i].len = 0;      
+  }
 
-    size_t idx = from_byte;
-    // always start from beginning of a line
-    if (from_byte != 0 && data[from_byte - 1] != '\n') {
-        while (data[idx] != '\n') idx++;
-        idx++;
-    }
-    if (idx >= to_byte) {
-        // this should never happen since if dataset is too small, we use 1 thread
-        throw std::runtime_error("idx >= to_byte error");        
-    }
+  size_t start_idx = from_byte;
+  find_next_line_start(data, to_byte, start_idx);  
 
-    while (idx < to_byte) {
-        handle_line<false>(data + idx, hmaps[tid], idx);
-    }
+  constexpr size_t ILP_LEVEL = 2;
+  size_t BYTES_PER_THREAD = (to_byte - start_idx) / ILP_LEVEL;
+  size_t idx0 = start_idx;
+  size_t idx1 = start_idx + BYTES_PER_THREAD * 1;
+  
+  find_next_line_start(data, to_byte, idx1);  
 
-    // Just keeping it here EVEN THOUGH THE CODE IS NEVER EXECUTED make the program ~1% faster
-    if (tid == N_THREADS - 1) {
-        while (idx < file_size) {
-            handle_line<true>(data + idx, hmaps[tid], idx);
-        }
+  size_t end_idx0 = idx1 - 1;
+  size_t end_idx1 = to_byte;
+
+  while (likely(idx0 < end_idx0 && idx1 < end_idx1)) {
+    handle_line<false>(data + idx0, hmaps[tid], idx0);
+    handle_line<false>(data + idx1, hmaps[tid], idx1);    
+  }
+
+  while (idx0 < end_idx0) {
+    handle_line<false>(data + idx0, hmaps[tid], idx0);
+  }
+  while (idx1 < end_idx1) {
+    handle_line<false>(data + idx1, hmaps[tid], idx1);
+  }
+
+  // Just keeping it here EVEN THOUGH THE CODE IS NEVER EXECUTED make the program ~1% faster
+  if (tid == N_THREADS - 1) {
+    while (idx1 < file_size) {
+        handle_line<true>(data + idx1, hmaps[tid], idx1);
     }
+  }
 }
 
 void parallel_aggregate(int tid)
@@ -358,7 +374,7 @@ int main(int argc, char* argv[])
   sort(results.begin(), results.end());
 
   // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
-  ofstream fo("result_valid15.txt");
+  ofstream fo("result_valid16.txt");
   fo << fixed << setprecision(1);
   fo << "{";
   for (size_t i = 0; i < results.size(); i++) {
@@ -388,87 +404,74 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-// Trying to remove SAFE_HASH and simplify hmap_insert code
+// More ILP per thread by processing lines in parallel
+// 2 is best (on 2950X)
 // Using 32 threads
-// Malloc cost = 0.006412
-// init mmap file cost = 0.012484ms
-// Parallel process file cost = 459.44ms
-// Aggregate stats cost = 1.76051ms
-// Output stats cost = 0.723936ms
-// Runtime inside main = 461.983ms
-// Time to munmap = 150.296
-// Time to free memory = 4.17061
+// Malloc cost = 0.006362
+// init mmap file cost = 0.018465ms
+// Parallel process file cost = 445.354ms
+// Aggregate stats cost = 1.89239ms
+// Output stats cost = 0.948764ms
+// Runtime inside main = 448.259ms
+// Time to munmap = 153.271
+// Time to free memory = 4.18901
 
-// real    0m0.619s
-// user    0m13.504s
-// sys     0m0.777s
+// real    0m0.609s
+// user    0m12.972s
+// sys     0m0.744s
 
 // Using 32 threads
-// Malloc cost = 0.006743
-// init mmap file cost = 0.016651ms
-// Parallel process file cost = 456.533ms
-// Aggregate stats cost = 1.971ms
-// Output stats cost = 0.71056ms
-// Runtime inside main = 459.279ms
-// Time to munmap = 150.816
-// Time to free memory = 4.1434
+// Malloc cost = 0.006232
+// init mmap file cost = 0.011862ms
+// Parallel process file cost = 434.722ms
+// Aggregate stats cost = 1.81314ms
+// Output stats cost = 1.29636ms
+// Runtime inside main = 437.907ms
+// Time to munmap = 152.04
+// Time to free memory = 4.15658
 
-// real    0m0.617s
-// user    0m13.326s
+// real    0m0.597s
+// user    0m12.772s
+// sys     0m0.801s
+
+// Using 32 threads
+// Malloc cost = 0.007565
+// init mmap file cost = 0.012514ms
+// Parallel process file cost = 442.039ms
+// Aggregate stats cost = 1.96273ms
+// Output stats cost = 0.769082ms
+// Runtime inside main = 444.831ms
+// Time to munmap = 157.388
+// Time to free memory = 4.14441
+
+// real    0m0.609s
+// user    0m12.725s
+// sys     0m0.883s
+
+// Using 32 threads
+// Malloc cost = 0.006512
+// init mmap file cost = 0.012473ms
+// Parallel process file cost = 434.732ms
+// Aggregate stats cost = 1.78394ms
+// Output stats cost = 0.728384ms
+// Runtime inside main = 437.302ms
+// Time to munmap = 151.751
+// Time to free memory = 4.18093
+
+// real    0m0.596s
+// user    0m12.780s
+// sys     0m0.843s
+
+// Using 32 threads
+// Malloc cost = 0.01568
+// init mmap file cost = 0.012183ms
+// Parallel process file cost = 445.564ms
+// Aggregate stats cost = 1.79136ms
+// Output stats cost = 0.734997ms
+// Runtime inside main = 448.152ms
+// Time to munmap = 155.886
+// Time to free memory = 4.19275
+
+// real    0m0.611s
+// user    0m12.795s
 // sys     0m0.920s
-
-// Using 32 threads
-// Malloc cost = 0.006312
-// init mmap file cost = 0.017302ms
-// Parallel process file cost = 457.354ms
-// Aggregate stats cost = 1.76002ms
-// Output stats cost = 0.752059ms
-// Runtime inside main = 459.928ms
-// Time to munmap = 160
-// Time to free memory = 4.20289
-
-// real    0m0.627s
-// user    0m13.588s
-// sys     0m0.785s
-
-// Using 32 threads
-// Malloc cost = 0.006532
-// init mmap file cost = 0.015089ms
-// Parallel process file cost = 457.72ms
-// Aggregate stats cost = 1.7806ms
-// Output stats cost = 0.748373ms
-// Runtime inside main = 460.31ms
-// Time to munmap = 151.989
-// Time to free memory = 4.13063
-
-// real    0m0.619s
-// user    0m13.487s
-// sys     0m0.730s
-
-// Using 32 threads
-// Malloc cost = 0.006884
-// init mmap file cost = 0.012333ms
-// Parallel process file cost = 457.024ms
-// Aggregate stats cost = 1.80579ms
-// Output stats cost = 0.739736ms
-// Runtime inside main = 459.631ms
-// Time to munmap = 156.907
-// Time to free memory = 4.21741
-
-// real    0m0.624s
-// user    0m13.433s
-// sys     0m0.806s
-
-// Using 1 threads
-// Malloc cost = 0.007093
-// init mmap file cost = 0.014027ms
-// Parallel process file cost = 9698.43ms
-// Aggregate stats cost = 0.187015ms
-// Output stats cost = 0.771626ms
-// Runtime inside main = 9699.43ms
-// Time to munmap = 149.705
-// Time to free memory = 0.150106
-
-// real    0m9.852s
-// user    0m9.496s
-// sys     0m0.348s

@@ -230,7 +230,6 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
 
 void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_byte, size_t file_size)
 {
-    // if use size_t(tid) * NUM_BINS instead of tid * NUM_BINS, total time becomes 2% slower. Wtf
     hmaps[tid] = global_hmaps + tid * NUM_BINS;
 
     // use malloc because we don't need to fill key with 0
@@ -409,7 +408,7 @@ int main(int argc, char* argv[])
   sort(results.begin(), results.end());
 
   // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
-  ofstream fo("result_valid14.txt");
+  ofstream fo("result_valid14b.txt");
   fo << fixed << setprecision(1);
   fo << "{";
   for (size_t i = 0; i < results.size(); i++) {

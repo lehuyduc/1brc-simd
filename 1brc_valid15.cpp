@@ -25,14 +25,14 @@ using namespace std;
 
 constexpr uint32_t SMALL = 276187; // >> 20
 constexpr int MAX_KEY_LENGTH = 100;
-constexpr uint32_t NUM_BINS = 16384 * 2;
+constexpr uint32_t NUM_BINS = 16384;
 
 #ifndef N_THREADS_PARAM
 constexpr int N_THREADS = 8; // to match evaluation server
 #else
 constexpr int N_THREADS = N_THREADS_PARAM;
 #endif
-constexpr bool DEBUG = 0;
+constexpr bool DEBUG = 1;
 
 
 struct Stats {
@@ -183,8 +183,7 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
 }
 
 void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_byte, size_t file_size)
-{
-    // if use size_t(tid) * NUM_BINS instead of tid * NUM_BINS, total time becomes 2% slower. Wtf
+{    
     hmaps[tid] = global_hmaps + tid * NUM_BINS;
 
     // use malloc because we don't need to fill key with 0
@@ -359,7 +358,7 @@ int main(int argc, char* argv[])
   sort(results.begin(), results.end());
 
   // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
-  ofstream fo("result.txt");
+  ofstream fo("result_valid15.txt");
   fo << fixed << setprecision(1);
   fo << "{";
   for (size_t i = 0; i < results.size(); i++) {
@@ -388,3 +387,74 @@ int main(int argc, char* argv[])
   if constexpr(DEBUG) cout << "Time to free memory = " << timer.getCounterMsPrecise() << "\n";
   return 0;
 }
+
+// Trying to remove SAFE_HASH and simplify hmap_insert code
+// Using 32 threads
+// Malloc cost = 0.006412
+// init mmap file cost = 0.012484ms
+// Parallel process file cost = 459.44ms
+// Aggregate stats cost = 1.76051ms
+// Output stats cost = 0.723936ms
+// Runtime inside main = 461.983ms
+// Time to munmap = 150.296
+// Time to free memory = 4.17061
+
+// real    0m0.619s
+// user    0m13.504s
+// sys     0m0.777s
+
+// Using 32 threads
+// Malloc cost = 0.006743
+// init mmap file cost = 0.016651ms
+// Parallel process file cost = 456.533ms
+// Aggregate stats cost = 1.971ms
+// Output stats cost = 0.71056ms
+// Runtime inside main = 459.279ms
+// Time to munmap = 150.816
+// Time to free memory = 4.1434
+
+// real    0m0.617s
+// user    0m13.326s
+// sys     0m0.920s
+
+// Using 32 threads
+// Malloc cost = 0.006312
+// init mmap file cost = 0.017302ms
+// Parallel process file cost = 457.354ms
+// Aggregate stats cost = 1.76002ms
+// Output stats cost = 0.752059ms
+// Runtime inside main = 459.928ms
+// Time to munmap = 160
+// Time to free memory = 4.20289
+
+// real    0m0.627s
+// user    0m13.588s
+// sys     0m0.785s
+
+// Using 32 threads
+// Malloc cost = 0.006532
+// init mmap file cost = 0.015089ms
+// Parallel process file cost = 457.72ms
+// Aggregate stats cost = 1.7806ms
+// Output stats cost = 0.748373ms
+// Runtime inside main = 460.31ms
+// Time to munmap = 151.989
+// Time to free memory = 4.13063
+
+// real    0m0.619s
+// user    0m13.487s
+// sys     0m0.730s
+
+// Using 32 threads
+// Malloc cost = 0.006884
+// init mmap file cost = 0.012333ms
+// Parallel process file cost = 457.024ms
+// Aggregate stats cost = 1.80579ms
+// Output stats cost = 0.739736ms
+// Runtime inside main = 459.631ms
+// Time to munmap = 156.907
+// Time to free memory = 4.21741
+
+// real    0m0.624s
+// user    0m13.433s
+// sys     0m0.806s

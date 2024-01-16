@@ -23,4 +23,4 @@ rm main
 g++ -o main main.cpp -O3 -std=c++17 -march=native -m64 -lpthread
 time ./main measurements.txt
 
-curl -H "Authorization: Bearer ACCESS_TOKEN" https://www.googleapis.com/drive/v3/files/1HEyNw4M453n0tnuaAm9nwaCiLydQYnpo?alt=media -o FILE_NAME 
+https://stackoverflow.com/questions/65312867/how-to-download-large-file-from-google-drive-from-terminal-gdown-doesnt-work

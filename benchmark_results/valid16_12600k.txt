@@ -1,0 +1,119 @@
+i5 12600k, 3600 MHz ddr4
+
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/c++/1brc-simd-main$ time ./main
+Using 16 threads
+
+real	0m0.827s
+user	0m10.355s
+sys	0m0.667s
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/c++/1brc-simd-main$ time ./main
+Using 16 threads
+
+real	0m0.855s
+user	0m10.359s
+sys	0m0.584s
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/c++/1brc-simd-main$ time ./main
+Using 16 threads
+
+real	0m0.830s
+user	0m10.425s
+sys	0m0.611s
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/c++/1brc-simd-main$ time ./main
+Using 16 threads
+
+real	0m0.832s
+user	0m10.482s
+sys	0m0.553s
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/c++/1brc-simd-main$ time ./main
+Using 16 threads
+
+real	0m0.833s
+user	0m10.439s
+sys	0m0.608s
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/c++/1brc-simd-main$ time ./main
+Using 16 threads
+
+real	0m0.829s
+user	0m10.438s
+sys	0m0.612s
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/c++/1brc-simd-main$ time ./main
+Using 16 threads
+
+real	0m0.832s
+user	0m10.426s
+sys	0m0.617s
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/c++/1brc-simd-main$ time ./main
+Using 16 threads
+
+real	0m0.827s
+user	0m10.388s
+sys	0m0.656s
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/c++/1brc-simd-main$c time ./main
+Using 16 threads
+
+real	0m0.835s
+user	0m10.424s
+sys	0m0.632s
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/c++/1brc-simd-main$ time ./main
+Using 16 threads
+
+real	0m0.831s
+user	0m10.410s
+sys	0m0.636s
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/++/1brc-simd-main$
+
+//-------------------------
+//-------------------------
+//-------------------------
+
+Using 8 threads
+real	0m1.276s
+user	0m6.966s
+sys	0m0.449s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/c++/1brc-simd-main$ time ./main
+Using 8 threads
+
+real	0m1.256s
+user	0m6.881s
+sys	0m0.440s
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/c++/1brc-simd-main$ time ./main
+Using 8 threads
+
+real	0m1.258s
+user	0m6.893s
+sys	0m0.421s
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/c++/1brc-simd-main$ time ./main
+Using 8 threads
+
+real	0m1.256s
+user	0m6.873s
+sys	0m0.413s
+
+//-------------------------
+//-------------------------
+//-------------------------
+
+uybv1998@huybv1998-MS-7D32:/media/huybv1998//c++/1brc-simd-main$ ./run_cpp.sh 1
+Using 1 threads
+
+real	0m6.117s
+user	0m5.777s
+sys	0m0.336s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/c++/1brc-simd-main$ ./run_cpp.sh 1
+Using 1 threads
+
+real	0m6.036s
+user	0m5.716s
+sys	0m0.320s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+huybv1998@huybv1998-MS-7D32:/media/huybv1998/c++/1brc-simd-main$ ./run_cpp.sh 1
+Using 1 threads
+
+real	0m6.055s
+user	0m5.662s
+sys	0m0.392s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+

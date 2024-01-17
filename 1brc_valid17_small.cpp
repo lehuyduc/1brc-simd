@@ -23,23 +23,16 @@ using namespace std;
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
 
-constexpr uint32_t SMALL = 749449;
-constexpr uint32_t SHL_CONST = 18;
+constexpr uint32_t SMALL = 276187;
+constexpr uint32_t SHL_CONST = 20;
 constexpr int MAX_KEY_LENGTH = 100;
-constexpr uint32_t NUM_BINS = 16384 * 8; // for 10k key cases. For 413 key cases, 16384 is enough.
+constexpr uint32_t NUM_BINS = 16384;
 
 #ifndef N_THREADS_PARAM
-constexpr int MAX_N_THREADS = 8; // to match evaluation server
+constexpr int N_THREADS = 8; // to match evaluation server
 #else
-constexpr int MAX_N_THREADS = N_THREADS_PARAM;
+constexpr int N_THREADS = N_THREADS_PARAM;
 #endif
-
-#ifndef N_CORES_PARAM
-constexpr int N_CORES = MAX_N_THREADS;
-#else
-constexpr int N_CORES = N_CORES_PARAM;
-#endif
-
 constexpr bool DEBUG = 1;
 
 
@@ -74,11 +67,13 @@ struct HashBin {
 };
 static_assert(sizeof(HashBin) == 128); // faster array indexing if struct is power of 2
 
-std::unordered_map<string, Stats> partial_stats[MAX_N_THREADS];
+constexpr int N_AGGREGATE = (N_THREADS >= 16) ? (N_THREADS >> 2) : 1;
+constexpr int N_AGGREGATE_LV2 = (N_AGGREGATE >= 32) ? (N_AGGREGATE >> 2) : 1;
+std::unordered_map<string, Stats> partial_stats[N_AGGREGATE];
 std::unordered_map<string, Stats> final_recorded_stats;
 
 HashBin* global_hmaps;
-alignas(4096) HashBin* hmaps[MAX_N_THREADS];
+alignas(4096) HashBin* hmaps[N_THREADS];
 
 alignas(4096) uint8_t strcmp_mask32[64] = {
   255, 255, 255, 255, 255, 255, 255, 255,
@@ -103,6 +98,8 @@ inline int __attribute__((always_inline)) mm256i_equal(__m256i a, __m256i b)
   return _mm256_testz_si256(neq, neq);
 }
 
+// SAFE_HASH == true is never executed happens, but removing it make code slower somehow...
+template <bool SAFE_HASH = false>
 inline void __attribute__((always_inline)) handle_line(const uint8_t* data, HashBin* hmap, size_t &data_idx)
 {
   uint32_t pos = 16;
@@ -142,14 +139,14 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
   int sign = (data[pos] == '-') ? -1 : 1;
   myhash %= NUM_BINS; // let pos be computed first beacause it's needed earlier  
 
-  // PhD code from curiouscoding.nl. Must use uint32_t else undefined behavior
-  uint32_t uvalue;
-  memcpy(&uvalue, data + pos + 1, 4);
-  uvalue <<= 8 * (data[pos + 2] == '.');
+  // PhD code from curiouscoding.nl 
+  int value;  
+  memcpy(&value, data + pos + 1, 4);
+  value <<= 8 * (data[pos + 2] == '.');
   constexpr uint64_t C = 1 + (10 << 16) + (100 << 24); // holy hell
-  uvalue &= 0x0f000f0f; // new mask just dropped
-  uvalue = ((uvalue * C) >> 24) & ((1 << 10) - 1); // actual branchless
-  int value = int(uvalue) * sign;
+  value &= 0x0f000f0f; // new mask just dropped
+  value = ((value * C) >> 24) & ((1 << 10) - 1); // actual branchless
+  value *= sign;
 
   // intentionally move index updating before hmap_insert
   // to improve register dependency chain
@@ -188,13 +185,13 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
     __m256i bin_chars = _mm256_loadu_si256((__m256i*)hmap[myhash].key);
     if (likely(mm256i_equal(key_chars, bin_chars))) {}
     else {
-      myhash = (myhash + 1) % NUM_BINS;
-      while (hmap[myhash].len > 0) {
-        // SIMD string comparison      
-        __m256i bin_chars = _mm256_loadu_si256((__m256i*)hmap[myhash].key);
-        if (likely(mm256i_equal(key_chars, bin_chars))) break;            
-        myhash = (myhash + 1) % NUM_BINS;    
-      }
+        myhash = (myhash + 1) % NUM_BINS;
+        while (hmap[myhash].len > 0) {
+            // SIMD string comparison      
+            __m256i bin_chars = _mm256_loadu_si256((__m256i*)hmap[myhash].key);
+            if (likely(mm256i_equal(key_chars, bin_chars))) break;            
+            myhash = (myhash + 1) % NUM_BINS;    
+        }
     }
   }
   else {
@@ -215,10 +212,8 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
   auto& stats = hmap[myhash].stats;
   stats.cnt++;
   stats.sum += value;
-  if (unlikely(stats.max < value)) stats.max = value;
-  if (unlikely(stats.min > value)) stats.min = value;
-  // stats.max = max(stats.max, value);
-  // stats.min = min(stats.min, value);
+  stats.max = max(stats.max, value);
+  stats.min = min(stats.min, value);
 
   // each key will only be free 1 first time, so it's unlikely
   if (unlikely(hmap[myhash].len == 0)) {
@@ -238,13 +233,12 @@ void find_next_line_start(const uint8_t* data, size_t N, size_t &idx)
   while (idx < N && data[idx - 1] != '\n') idx++;
 }
 
-size_t handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_byte, size_t file_size, bool inited)
+void handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to_byte, size_t file_size)
 {
-  if (!inited) {
-    hmaps[tid] = global_hmaps + tid * NUM_BINS;
-    // use malloc because we don't need to fill key with 0
-    for (int i = 0; i < NUM_BINS; i++) hmaps[tid][i].len = 0;
-  }
+  hmaps[tid] = global_hmaps + tid * NUM_BINS;
+
+  // use malloc because we don't need to fill key with 0
+  for (int i = 0; i < NUM_BINS; i++) hmaps[tid][i].len = 0;
 
   size_t start_idx = from_byte;
   find_next_line_start(data, to_byte, start_idx);  
@@ -261,25 +255,27 @@ size_t handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to
   size_t end_idx1 = to_byte;
 
   while (likely(idx0 < end_idx0 && idx1 < end_idx1)) {
-    handle_line(data + idx0, hmaps[tid], idx0);
-    handle_line(data + idx1, hmaps[tid], idx1);    
+    handle_line<false>(data + idx0, hmaps[tid], idx0);
+    handle_line<false>(data + idx1, hmaps[tid], idx1);    
   }
 
   while (idx0 < end_idx0) {
-    handle_line(data + idx0, hmaps[tid], idx0);
+    handle_line<false>(data + idx0, hmaps[tid], idx0);
   }
   while (idx1 < end_idx1) {
-    handle_line(data + idx1, hmaps[tid], idx1);
-  }
-
-  return idx1; // return the beginning of the first line of the next block
+    handle_line<false>(data + idx1, hmaps[tid], idx1);
+  }  
 }
 
-void parallel_aggregate(int tid, int n_threads, int n_aggregate)
+void parallel_aggregate(int tid)
 {
-  for (int idx = tid; idx < n_threads; idx += n_aggregate) {
-    for (int h = 0; h < NUM_BINS; h++) if (hmaps[idx][h].len > 0) {
-      auto& bin = hmaps[idx][h];
+  constexpr int BLOCK_SIZE = (N_THREADS / N_AGGREGATE);
+  int start_idx = tid * BLOCK_SIZE;
+  int end_idx = (tid + 1) * BLOCK_SIZE;
+
+  for (int hmap_idx = start_idx; hmap_idx < end_idx; hmap_idx++) {
+    for (int h = 0; h < NUM_BINS; h++) if (hmaps[hmap_idx][h].len > 0) {
+      auto& bin = hmaps[hmap_idx][h];
       auto& stats = partial_stats[tid][string(bin.key, bin.key + bin.len)];
       stats.cnt += bin.stats.cnt;
       stats.sum += bin.stats.sum;
@@ -289,9 +285,9 @@ void parallel_aggregate(int tid, int n_threads, int n_aggregate)
   }
 }
 
-void parallel_aggregate_lv2(int tid, int n_aggregate, int n_aggregate_lv2)
+void parallel_aggregate_lv2(int tid)
 {
-  for (int idx = n_aggregate_lv2 + tid; idx < n_aggregate; idx += n_aggregate_lv2) {
+  for (int idx = N_AGGREGATE_LV2 + tid; idx < N_AGGREGATE; idx += N_AGGREGATE_LV2) {
     for (auto& [key, value] : partial_stats[idx]) {
       auto& stats = partial_stats[tid][key];
       stats.cnt += value.cnt;
@@ -310,15 +306,14 @@ volatile int dummy;
 
 int main(int argc, char* argv[])
 {
-  if constexpr(DEBUG) cout << "Using " << MAX_N_THREADS << " threads\n";
-  if constexpr(DEBUG) cout << "PC has " << N_CORES << " physical cores\n";
+  cout << "Using " << N_THREADS << " threads\n";
   MyTimer timer, timer2;
   timer.startCounter();
 
   // doing this is faster than letting each thread malloc once
   timer2.startCounter();
-  global_hmaps = (HashBin*)memalign(sizeof(HashBin), (size_t)MAX_N_THREADS * NUM_BINS * sizeof(HashBin));
-  if constexpr(DEBUG) cout << "Malloc cost = " << timer2.getCounterMsPrecise() << "\n";
+  global_hmaps = (HashBin*)memalign(sizeof(HashBin), (size_t)N_THREADS * NUM_BINS * sizeof(HashBin));
+  if constexpr(DEBUG) cout << "Malloc cost = " << timer.getCounterMsPrecise() << "\n";
 
   timer2.startCounter();
   string file_path = "measurements.txt";
@@ -337,31 +332,10 @@ int main(int argc, char* argv[])
   //----------------------
   timer2.startCounter();
   size_t idx = 0;
-
-  bool tid0_inited = false;
-  int n_threads = MAX_N_THREADS;
-  if (file_size > 100'000'000 && MAX_N_THREADS > N_CORES) {
-    // when there are too many hash collision, hyper threading will make the program slower
-    // due to L3 cache problem.
-    // So, we use the first 1MB to gather statistics about the file.
-    // If num_unique_keys >= X then use hyper threading (MAX_N_THREADS)
-    // Else, use physical cores only (N_CORES)
-    // The program still works on all inputs. But this check let it works faster for hard inputs
-    tid0_inited = true;
-    size_t to_byte = 100'000;
-    idx = handle_line_raw(0, data, 0, to_byte, file_size, false);
-
-    int unique_key_cnt = 0;
-    for (int h = 0; h < NUM_BINS; h++) if (hmaps[0][h].len > 0) unique_key_cnt++;
-    if (unique_key_cnt > 1000) n_threads = N_CORES;    
-  }
-
-  if constexpr(DEBUG) cout << "n_threads = " << n_threads << "\n";
-  if constexpr(DEBUG) cout << "Gather key stats cost = " << timer2.getCounterMsPrecise() << "\n";
-
-  timer2.startCounter();
+  int n_threads = N_THREADS;
+  if (file_size / n_threads < 4 * MAX_KEY_LENGTH) n_threads = 1;
+  
   size_t remaining_bytes = file_size - idx;
-  if (remaining_bytes / n_threads < 4 * MAX_KEY_LENGTH) n_threads = 1;  
   size_t bytes_per_thread = remaining_bytes / n_threads + 1;
   vector<size_t> tstart, tend;
   vector<std::thread> threads;
@@ -371,37 +345,34 @@ int main(int argc, char* argv[])
       if (ender > file_size) ender = file_size;
       if (tid) {
         threads.emplace_back([tid, data, starter, ender, file_size]() {
-          handle_line_raw(tid, data, starter, ender, file_size, false);
+          handle_line_raw(tid, data, starter, ender, file_size);
         });
-      } else handle_line_raw(0, data, starter, ender, file_size, tid0_inited);
+      } else handle_line_raw(tid, data, starter, ender, file_size);
   }
 
   for (auto& thread : threads) thread.join();
-  if constexpr(DEBUG) cout << "Parallel process file cost = " << timer2.getCounterMsPrecise() << "ms\n";
+  if constexpr(DEBUG) cout << "Parallel process file cost = " << timer.getCounterMsPrecise() << "ms\n";
 
   //----------------------
   timer2.startCounter();
-  const int N_AGGREGATE = (n_threads >= 16 && n_threads % 4 == 0) ? (n_threads >> 2) : 1;
-  const int N_AGGREGATE_LV2 = (N_AGGREGATE >= 32 && N_AGGREGATE % 4 == 0) ? (N_AGGREGATE >> 2) : 1;
-
-  if (N_AGGREGATE > 1) {
+  if constexpr(N_AGGREGATE > 1) {
     threads.clear();
     for (int tid = 1; tid < N_AGGREGATE; tid++) {
-      threads.emplace_back([tid, n_threads, N_AGGREGATE]() {
-        parallel_aggregate(tid, n_threads, N_AGGREGATE);
+      threads.emplace_back([tid]() {
+        parallel_aggregate(tid);
       });
     }
-    parallel_aggregate(0, n_threads, N_AGGREGATE);
+    parallel_aggregate(0);
     for (auto& thread : threads) thread.join();
 
     //----- parallel reduction again
     threads.clear();
     for (int tid = 1; tid < N_AGGREGATE_LV2; tid++) {
-      threads.emplace_back([tid, N_AGGREGATE, N_AGGREGATE_LV2]() {
-        parallel_aggregate_lv2(tid, N_AGGREGATE, N_AGGREGATE_LV2);
+      threads.emplace_back([tid]() {
+        parallel_aggregate_lv2(tid);
       });
     }
-    parallel_aggregate_lv2(0, N_AGGREGATE, N_AGGREGATE_LV2);
+    parallel_aggregate_lv2(0);
     for (auto& thread : threads) thread.join();
     // now, the stats are aggregated into partial_stats[0 : N_AGGREGATE_LV2]
 
@@ -466,4 +437,129 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-// non branchless min max
+//---- Use best prime number + handle len <= 32 case (vali16 only handle <= 16)
+// Using 32 threads
+// Malloc cost = 0.006723
+// init mmap file cost = 0.012383ms
+// Parallel process file cost = 430.994ms
+// Aggregate stats cost = 1.67675ms
+// Output stats cost = 0.712887ms
+// Runtime inside main = 433.443ms
+// Time to munmap = 152.503
+// Time to free memory = 4.22786
+
+// real    0m0.593s
+// user    0m12.516s
+// sys     0m0.909s
+
+// Using 32 threads
+// Malloc cost = 0.006563
+// init mmap file cost = 0.016711ms
+// Parallel process file cost = 440.889ms
+// Aggregate stats cost = 1.9651ms
+// Output stats cost = 1.26724ms
+// Runtime inside main = 444.187ms
+// Time to munmap = 153.209
+// Time to free memory = 4.18062
+
+// real    0m0.605s
+// user    0m12.639s
+// sys     0m0.762s
+
+// Using 32 threads
+// Malloc cost = 0.006362
+// init mmap file cost = 0.012163ms
+// Parallel process file cost = 432.994ms
+// Aggregate stats cost = 1.7265ms
+// Output stats cost = 0.691827ms
+// Runtime inside main = 435.471ms
+// Time to munmap = 157.723
+// Time to free memory = 4.2074
+
+// real    0m0.600s
+// user    0m12.555s
+// sys     0m0.968s
+
+// Using 32 threads
+// Malloc cost = 0.006402
+// init mmap file cost = 0.012023ms
+// Parallel process file cost = 432.68ms
+// Aggregate stats cost = 1.87215ms
+// Output stats cost = 0.712888ms
+// Runtime inside main = 435.326ms
+// Time to munmap = 154.407
+// Time to free memory = 4.24789
+
+// real    0m0.597s
+// user    0m12.554s
+// sys     0m0.890s
+
+// Using 32 threads
+// Malloc cost = 0.006712
+// init mmap file cost = 0.011953ms
+// Parallel process file cost = 430.34ms
+// Aggregate stats cost = 1.73795ms
+// Output stats cost = 0.733006ms
+// Runtime inside main = 432.873ms
+// Time to munmap = 152.166
+// Time to free memory = 4.2524
+
+// real    0m0.592s
+// user    0m12.653s
+// sys     0m0.784s
+
+// Using 32 threads
+// Malloc cost = 0.006562
+// init mmap file cost = 0.012443ms
+// Parallel process file cost = 428.21ms
+// Aggregate stats cost = 1.7211ms
+// Output stats cost = 0.717417ms
+// Runtime inside main = 430.707ms
+// Time to munmap = 151.817
+// Time to free memory = 4.26416
+
+// real    0m0.590s
+// user    0m12.481s
+// sys     0m0.965s
+
+// Using 32 threads
+// Malloc cost = 0.006372
+// init mmap file cost = 0.012093ms
+// Parallel process file cost = 428.252ms
+// Aggregate stats cost = 1.67904ms
+// Output stats cost = 0.716215ms
+// Runtime inside main = 430.701ms
+// Time to munmap = 151.639
+// Time to free memory = 4.22235
+
+// real    0m0.590s
+// user    0m12.529s
+// sys     0m0.911s
+
+// Using 32 threads
+// Malloc cost = 0.006722
+// init mmap file cost = 0.012674ms
+// Parallel process file cost = 429.893ms
+// Aggregate stats cost = 1.87504ms
+// Output stats cost = 0.710544ms
+// Runtime inside main = 432.538ms
+// Time to munmap = 151.655
+// Time to free memory = 4.22723
+
+// real    0m0.592s
+// user    0m12.561s
+// sys     0m0.888s
+
+// Using 32 threads
+// Malloc cost = 0.006733
+// init mmap file cost = 0.012333ms
+// Parallel process file cost = 429.006ms
+// Aggregate stats cost = 1.71453ms
+// Output stats cost = 0.728689ms
+// Runtime inside main = 431.512ms
+// Time to munmap = 151.91
+// Time to free memory = 4.25584
+
+// real    0m0.591s
+// user    0m12.618s
+// sys     0m0.839s

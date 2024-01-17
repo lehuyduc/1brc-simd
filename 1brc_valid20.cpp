@@ -40,7 +40,7 @@ constexpr int N_CORES = MAX_N_THREADS;
 constexpr int N_CORES = N_CORES_PARAM;
 #endif
 
-constexpr bool DEBUG = 0;
+constexpr bool DEBUG = 1;
 
 
 struct Stats {
@@ -495,3 +495,5 @@ int main(int argc, char* argv[])
   if constexpr(DEBUG) cout << "Time to free memory = " << timer.getCounterMsPrecise() << "\n";
   return 0;
 }
+
+// optimize code path for long station name

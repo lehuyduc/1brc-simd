@@ -23,10 +23,10 @@ using namespace std;
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
 
-constexpr uint32_t SMALL = 749449;
-constexpr uint32_t SHL_CONST = 18;
+constexpr uint32_t SMALL = 276187;
+constexpr uint32_t SHL_CONST = 20;
 constexpr int MAX_KEY_LENGTH = 100;
-constexpr uint32_t NUM_BINS = 16384 * 8; // for 10k key cases. For 413 key cases, 16384 is enough.
+constexpr uint32_t NUM_BINS = 16384; // for 10k key cases. For 413 key cases, 16384 is enough.
 
 #ifndef N_THREADS_PARAM
 constexpr int MAX_N_THREADS = 8; // to match evaluation server
@@ -40,7 +40,7 @@ constexpr int N_CORES = MAX_N_THREADS;
 constexpr int N_CORES = N_CORES_PARAM;
 #endif
 
-constexpr bool DEBUG = 0;
+constexpr bool DEBUG = 1;
 
 
 struct Stats {
@@ -127,20 +127,14 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
   myhash = (uint64_t(_mm_cvtsi128_si64(sumchars)) * SMALL) >> SHL_CONST;
 
   if (unlikely(data[pos] != ';')) {
-    __m256i chars32_1 = _mm256_loadu_si256((__m256i*)(data + 17));
-    __m256i chars32_2 = _mm256_loadu_si256((__m256i*)(data + 17 + 32));
-    __m256i separators32 = _mm256_set1_epi8(';');
+    __m128i chars_2 = _mm_loadu_si128((__m128i*)(data + 17));
+    __m128i compared_2 = _mm_cmpeq_epi8(chars_2, separators);
+    uint32_t separator_mask2 = _mm_movemask_epi8(compared_2);
 
-    __m256i compared32_1 = _mm256_cmpeq_epi8(chars32_1, separators32);
-    __m256i compared32_2 = _mm256_cmpeq_epi8(chars32_2, separators32);
-
-    uint64_t separator_mask64 = uint64_t(_mm256_movemask_epi8(compared32_1)) | (uint64_t(_mm256_movemask_epi8(compared32_2)) << 32);
-    if (likely(separator_mask64)) pos = 17 + __builtin_ctzll(separator_mask64);      
+    if (likely(separator_mask2)) pos = 17 + __builtin_ctz(separator_mask2);
     else {
-      __m256i chars32_3 = _mm256_loadu_si256((__m256i*)(data + 81));
-      __m256i compared32_3 = _mm256_cmpeq_epi8(chars32_3, separators32);
-      uint32_t separator_mask_final = _mm256_movemask_epi8(compared32_3);
-      pos = 81 + __builtin_ctz(separator_mask_final);      
+        pos = 32;
+        while (data[pos] != ';') pos++;
     }
   }
 
@@ -365,29 +359,9 @@ int main(int argc, char* argv[])
   if constexpr(DEBUG) cout << "init mmap file cost = " << timer2.getCounterMsPrecise() << "ms\n";
   
   //----------------------
-  timer2.startCounter();
   size_t idx = 0;
-
   bool tid0_inited = false;
   int n_threads = MAX_N_THREADS;
-  if (file_size > 100'000'000 && MAX_N_THREADS > N_CORES) {
-    // when there are too many hash collision, hyper threading will make the program slower
-    // due to L3 cache problem.
-    // So, we use the first 1MB to gather statistics about the file.
-    // If num_unique_keys >= X then use hyper threading (MAX_N_THREADS)
-    // Else, use physical cores only (N_CORES)
-    // The program still works on all inputs. But this check let it works faster for hard inputs
-    tid0_inited = true;
-    size_t to_byte = 50'000;
-    idx = handle_line_raw(0, data, 0, to_byte, file_size, false);
-
-    int unique_key_cnt = 0;
-    for (int h = 0; h < NUM_BINS; h++) if (hmaps[0][h].len > 0) unique_key_cnt++;
-    if (unique_key_cnt > 500) n_threads = N_CORES;    
-  }
-
-  if constexpr(DEBUG) cout << "n_threads = " << n_threads << "\n";
-  if constexpr(DEBUG) cout << "Gather key stats cost = " << timer2.getCounterMsPrecise() << "\n";
 
   timer2.startCounter();
   size_t remaining_bytes = file_size - idx;
@@ -495,3 +469,5 @@ int main(int argc, char* argv[])
   if constexpr(DEBUG) cout << "Time to free memory = " << timer.getCounterMsPrecise() << "\n";
   return 0;
 }
+
+// optimize code path for long station name

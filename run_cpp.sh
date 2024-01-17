@@ -7,10 +7,15 @@ else
     num_threads=$(nproc --all)
 fi
 
-num_cores=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}')
+if [ -n "$2" ]; then
+    # Use the provided input parameter as the number of physical cores
+    num_cores="$2"
+else
+    num_cores=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}')
+fi
 
 rm -f main
 rm -f result.txt
-g++ -o main 1brc_final_valid.cpp -O3 -std=c++17 -march=native -m64 -lpthread -DN_THREADS_PARAM=$num_threads -DN_CORES_PARAM=$num_cores
-time ./main measurements.txt
+g++ -o main 1brc_final_valid.cpp -O3 -std=c++17 -march=native -m64 -lpthread -DN_THREADS_PARAM=$num_threads -DN_CORES_PARAM=$num_cores -g
+time ./main output.txt measurements.txt
 sha256sum result.txt

@@ -1,0 +1,305 @@
+// HUGE VARIANCE WHEN RUNNING AT MAX CORES COUNT ON 2950X. Especially in valid19 version
+// Interesting topic to look into. Maybe it's because of AMD chiplet design?
+// Threads are assigned randomly, so if we get unfortunate assignment (2 threads working on the same L3 cache region),
+// but assigned to opposite core cluster, then performance drops.
+
+//--------------------------
+//--------------------------
+//--------------------------
+// FAST CASE
+Using 32 threads
+PC has 16 physical cores
+Malloc cost = 0.006923
+init mmap file cost = 0.013145ms
+n_threads = 16
+Gather key stats cost = 8.36281
+Parallel process file cost = 1348.91ms
+Aggregate stats cost = 15.0143ms
+Output stats cost = 13.6755ms
+Runtime inside main = 1386.08ms
+Time to munmap = 377.648
+Time to free memory = 10.5463
+
+real	0m1.781s
+user	0m19.701s
+sys	0m1.485s
+
+Using 32 threads
+PC has 16 physical cores
+Malloc cost = 0.00545
+init mmap file cost = 0.009498ms
+n_threads = 16
+Gather key stats cost = 6.82152
+Parallel process file cost = 1468.07ms
+Aggregate stats cost = 14.8578ms
+Output stats cost = 13.2019ms
+Runtime inside main = 1503.05ms
+Time to munmap = 377.94
+Time to free memory = 10.4999
+
+real	0m1.898s
+user	0m20.061s
+sys	0m1.479s
+
+Using 32 threads
+PC has 16 physical cores
+Malloc cost = 0.006522
+init mmap file cost = 0.013446ms
+n_threads = 16
+Gather key stats cost = 8.58899
+Parallel process file cost = 1341.34ms
+Aggregate stats cost = 15.5884ms
+Output stats cost = 13.5001ms
+Runtime inside main = 1379.14ms
+Time to munmap = 369.615
+Time to free memory = 10.2765
+real	0m1.766s
+user	0m19.629s
+sys	0m1.424s
+
+Using 32 threads
+PC has 16 physical cores
+Malloc cost = 0.006272
+init mmap file cost = 0.012264ms
+n_threads = 16
+Gather key stats cost = 8.27729
+Parallel process file cost = 1383.82ms
+Aggregate stats cost = 15.0537ms
+Output stats cost = 13.3511ms
+Runtime inside main = 1420.62ms
+Time to munmap = 373.345
+Time to free memory = 10.3278
+
+real	0m1.811s
+user	0m19.644s
+sys	0m1.468s
+
+Using 32 threads
+PC has 16 physical cores
+Malloc cost = 0.007183
+init mmap file cost = 0.012875ms
+n_threads = 16
+Gather key stats cost = 8.59844
+Parallel process file cost = 1648.32ms
+Aggregate stats cost = 15.4025ms
+Output stats cost = 13.4829ms
+Runtime inside main = 1685.93ms
+Time to munmap = 371.603
+Time to free memory = 10.488
+
+real	0m2.075s
+user	0m20.680s
+sys	0m1.491s
+
+Using 32 threads
+PC has 16 physical cores
+Malloc cost = 0.006252
+init mmap file cost = 0.012754ms
+n_threads = 16
+Gather key stats cost = 8.56964
+Parallel process file cost = 1472.86ms
+Aggregate stats cost = 15.7392ms
+Output stats cost = 14.1478ms
+Runtime inside main = 1511.45ms
+Time to munmap = 371.792
+Time to free memory = 10.0895
+
+real	0m1.900s
+user	0m19.850s
+sys	0m1.464s
+
+Using 32 threads
+PC has 16 physical cores
+Malloc cost = 0.007294
+init mmap file cost = 0.013366ms
+n_threads = 16
+Gather key stats cost = 8.25643
+Parallel process file cost = 1341.31ms
+Aggregate stats cost = 15.3847ms
+Output stats cost = 13.3075ms
+Runtime inside main = 1378.39ms
+Time to munmap = 372.349
+Time to free memory = 10.1484
+
+real	0m1.768s
+user	0m19.680s
+sys	0m1.431s
+
+Using 32 threads
+PC has 16 physical cores
+Malloc cost = 0.007274
+init mmap file cost = 0.013035ms
+n_threads = 16
+Gather key stats cost = 8.17189
+Parallel process file cost = 1678.73ms
+Aggregate stats cost = 16.9085ms
+Output stats cost = 12.9215ms
+Runtime inside main = 1716.85ms
+Time to munmap = 369.938
+Time to free memory = 10.3593
+
+real	0m2.104s
+user	0m21.024s
+sys	0m1.582s
+
+//--------------------------
+//--------------------------
+//--------------------------
+// SLOW CASE
+Using 32 threads
+PC has 16 physical cores
+Malloc cost = 0.006492
+init mmap file cost = 0.012324ms
+n_threads = 16
+Gather key stats cost = 8.39152
+Parallel process file cost = 1824.63ms
+Aggregate stats cost = 16.1643ms
+Output stats cost = 13.3731ms
+Runtime inside main = 1862.69ms
+Time to munmap = 370.482
+Time to free memory = 10.3388
+
+real	0m2.250s
+user	0m21.075s
+sys	0m1.391s
+
+Using 32 threads
+PC has 16 physical cores
+Malloc cost = 0.006522
+init mmap file cost = 0.013866ms
+n_threads = 16
+Gather key stats cost = 8.34512
+Parallel process file cost = 1706.79ms
+Aggregate stats cost = 16.4838ms
+Output stats cost = 15.2703ms
+Runtime inside main = 1747.04ms
+Time to munmap = 372.054
+Time to free memory = 10.1005
+
+real	0m2.136s
+user	0m20.476s
+sys	0m1.592s
+
+Using 32 threads
+PC has 16 physical cores
+Malloc cost = 0.007103
+init mmap file cost = 0.016081ms
+n_threads = 16
+Gather key stats cost = 8.46653
+Parallel process file cost = 1705.83ms
+Aggregate stats cost = 15.5825ms
+Output stats cost = 13.2736ms
+Runtime inside main = 1743.29ms
+Time to munmap = 375.11
+Time to free memory = 10.6067
+
+real	0m2.136s
+user	0m20.647s
+sys	0m1.476s
+
+Using 16 threads
+PC has 16 physical cores
+Malloc cost = 0.006453
+init mmap file cost = 0.017282ms
+n_threads = 16
+Gather key stats cost = 0.001643
+Parallel process file cost = 1842.79ms
+Aggregate stats cost = 15.1798ms
+Output stats cost = 13.0108ms
+Runtime inside main = 1871.1ms
+Time to munmap = 373.698
+Time to free memory = 10.2397
+
+real	0m2.262s
+user	0m20.840s
+sys	0m1.561s
+
+
+//--------------------------
+//--------------------------
+//--------------------------
+//--------------------------
+//--------------------------
+//--------------------------
+Using 8 threads
+PC has 16 physical cores
+Malloc cost = 0.006853
+init mmap file cost = 0.012524ms
+n_threads = 8
+Gather key stats cost = 0.001763
+Parallel process file cost = 1851.97ms
+Aggregate stats cost = 13.9248ms
+Output stats cost = 12.809ms
+Runtime inside main = 1878.83ms
+Time to munmap = 377.707
+Time to free memory = 6.00988
+real	0m2.266s
+user	0m13.234s
+sys	0m1.251s
+
+Using 8 threads
+PC has 16 physical cores
+Malloc cost = 0.006492
+init mmap file cost = 0.013165ms
+n_threads = 8
+Gather key stats cost = 0.001493
+Parallel process file cost = 1862.58ms
+Aggregate stats cost = 13.803ms
+Output stats cost = 13.2028ms
+Runtime inside main = 1889.7ms
+Time to munmap = 373.321
+Time to free memory = 6.10527
+
+real	0m2.273s
+user	0m13.394s
+sys	0m1.282s
+
+Using 4 threads
+PC has 16 physical cores
+Malloc cost = 0.005981
+init mmap file cost = 0.013155ms
+n_threads = 4
+Gather key stats cost = 0.001333
+Parallel process file cost = 3425.68ms
+Aggregate stats cost = 7.22504ms
+Output stats cost = 13.0476ms
+Runtime inside main = 3446.07ms
+Time to munmap = 370.133
+Time to free memory = 3.82809
+
+real	0m3.823s
+user	0m12.535s
+sys	0m1.227s
+
+Using 2 threads
+PC has 16 physical cores
+Malloc cost = 0.007504
+init mmap file cost = 0.01588ms
+n_threads = 2
+Gather key stats cost = 0.001573
+Parallel process file cost = 6700.72ms
+Aggregate stats cost = 3.95313ms
+Output stats cost = 13.1493ms
+Runtime inside main = 6717.95ms
+Time to munmap = 375.848
+Time to free memory = 2.12903
+
+real	0m7.100s
+user	0m12.477s
+sys	0m1.163s
+
+Using 1 threads
+PC has 16 physical cores
+Malloc cost = 0.007184
+init mmap file cost = 0.013055ms
+n_threads = 1
+Gather key stats cost = 0.001433
+Parallel process file cost = 12820.1ms
+Aggregate stats cost = 2.1569ms
+Output stats cost = 13.1197ms
+Runtime inside main = 12835.5ms
+Time to munmap = 369.764
+Time to free memory = 1.02998
+real	0m13.210s
+user	0m12.189s
+sys	0m1.007s

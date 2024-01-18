@@ -1,0 +1,275 @@
+Time to init data = 3177.81ms
+Bandwidth = 5.79936e+10 byte/s
+root@C.8317504:~/1brc-simd$ ./test_copy_bandwidth
+Time to init data = 3131.2ms
+Bandwidth = 5.90328e+10 byte/s
+
+// compile with 64 threads
+root@C.8317504:~/1brc-simd$ ./run.sh 
+
+real    0m0.606s
+user    0m15.900s
+sys     0m3.333s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+root@C.8317504:~/1brc-simd$ hyperfine --warmup 1 --runs 10 ./main
+Benchmark 1: ./main
+  Time (mean ± σ):     613.0 ms ±   6.3 ms    [User: 16050.4 ms, System: 3204.9 ms]
+  Range (min … max):   602.3 ms … 624.5 ms    10 runs
+
+// compile with 8 threads
+root@C.8317504:~/1brc-simd$ ./run.sh 8
+real    0m1.783s
+user    0m11.885s
+sys     0m0.756s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+root@C.8317504:~/1brc-simd$ hyperfine --warmup 1 --runs 10 ./main
+Benchmark 1: ./main
+  Time (mean ± σ):      1.791 s ±  0.001 s    [User: 11.870 s, System: 0.761 s]
+  Range (min … max):    1.789 s …  1.794 s    10 runs
+
+// compile with 64 threads, use numactl to limit 8 threads
+root@C.8317504:~/1brc-simd$ ./run.sh 
+real    0m0.619s
+user    0m16.081s
+sys     0m3.072s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+root@C.8317504:~/1brc-simd$ numactl --physcpubind=0-7 hyperfine --warmup 1 --runs 10 ./main
+Benchmark 1: ./main
+  Time (mean ± σ):      1.966 s ±  0.013 s    [User: 12.329 s, System: 0.980 s]
+  Range (min … max):    1.942 s …  1.985 s    10 runs
+
+// compile with 8 threads, use numactl to limit 8 threads
+root@C.8317504:~/1brc-simd$ ./run.sh 8
+real    0m1.782s
+user    0m11.817s
+sys     0m0.804s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+root@C.8317504:~/1brc-simd$ numactl --physcpubind=0-7 hyperfine --warmup 1 --runs 10 ./main
+Benchmark 1: ./main
+  Time (mean ± σ):      1.787 s ±  0.001 s    [User: 11.902 s, System: 0.696 s]
+  Range (min … max):    1.785 s …  1.790 s    10 runs
+
+
+//------------------------------
+//------------------------------
+//------------------------------
+Using 64 threads
+PC has 32 physical cores
+Malloc cost = 0.00993
+init mmap file cost = 0.020031ms
+n_threads = 64
+Gather key stats cost = 8.64835
+Parallel process file cost = 316.815ms
+Aggregate stats cost = 9.93341ms
+Output stats cost = 0.762324ms
+Runtime inside main = 336.305ms
+Time to munmap = 208.828
+Time to free memory = 45.1805
+
+real    0m0.594s
+user    0m15.579s
+sys     0m3.472s
+
+Using 64 threads
+PC has 32 physical cores
+Malloc cost = 0.00942
+init mmap file cost = 0.026311ms
+n_threads = 64
+Gather key stats cost = 7.01119
+Parallel process file cost = 314.445ms
+Aggregate stats cost = 10.1357ms
+Output stats cost = 1.37604ms
+Runtime inside main = 333.117ms
+Time to munmap = 221.807
+Time to free memory = 45.3036
+
+real    0m0.604s
+user    0m15.867s
+sys     0m3.294s
+
+Using 32 threads
+PC has 32 physical cores
+Malloc cost = 0.007231
+init mmap file cost = 0.01812ms
+n_threads = 32
+Gather key stats cost = 0.00301
+Parallel process file cost = 440.795ms
+Aggregate stats cost = 7.20125ms
+Output stats cost = 1.10342ms
+Runtime inside main = 449.23ms
+Time to munmap = 209.523
+Time to free memory = 22.9645
+
+real    0m0.685s
+user    0m12.094s
+sys     0m1.409s
+
+Using 32 threads
+PC has 32 physical cores
+Malloc cost = 0.00658
+init mmap file cost = 0.01207ms
+n_threads = 32
+Gather key stats cost = 0.00198
+Parallel process file cost = 419.022ms
+Aggregate stats cost = 6.79558ms
+Output stats cost = 11.0796ms
+Runtime inside main = 437.012ms
+Time to munmap = 208.591
+Time to free memory = 22.7623
+
+real    0m0.671s
+user    0m12.218s
+sys     0m1.270s
+
+Using 16 threads
+PC has 32 physical cores
+Malloc cost = 0.0078
+init mmap file cost = 0.0182ms
+n_threads = 16
+Gather key stats cost = 0.002551
+Parallel process file cost = 797.775ms
+Aggregate stats cost = 5.21597ms
+Output stats cost = 0.95071ms
+Runtime inside main = 804.053ms
+Time to munmap = 209.847
+Time to free memory = 12.2153
+
+real    0m1.029s
+user    0m11.995s
+sys     0m0.945s
+
+Using 16 threads
+PC has 32 physical cores
+Malloc cost = 0.00636
+init mmap file cost = 0.013501ms
+n_threads = 16
+Gather key stats cost = 0.00173
+Parallel process file cost = 800.095ms
+Aggregate stats cost = 5.29291ms
+Output stats cost = 8.52828ms
+Runtime inside main = 814.027ms
+Time to munmap = 209.533
+Time to free memory = 11.9408
+
+real    0m1.038s
+user    0m11.984s
+sys     0m0.979s
+
+Using 8 threads
+PC has 32 physical cores
+Malloc cost = 0.00517
+init mmap file cost = 0.01312ms
+n_threads = 8
+Gather key stats cost = 0.0017
+Parallel process file cost = 1565.51ms
+Aggregate stats cost = 6.73377ms
+Output stats cost = 0.955369ms
+Runtime inside main = 1573.31ms
+Time to munmap = 209.365
+Time to free memory = 6.14379
+
+real    0m1.792s
+user    0m11.962s
+sys     0m0.760s
+
+Using 8 threads
+PC has 32 physical cores
+Malloc cost = 0.00731
+init mmap file cost = 0.018041ms
+n_threads = 8
+Gather key stats cost = 0.0025
+Parallel process file cost = 1564.59ms
+Aggregate stats cost = 6.63424ms
+Output stats cost = 0.799854ms
+Runtime inside main = 1572.15ms
+Time to munmap = 209.405
+Time to free memory = 6.54794
+
+real    0m1.791s
+user    0m12.025s
+sys     0m0.695s
+
+Using 4 threads
+PC has 32 physical cores
+Malloc cost = 0.00801
+init mmap file cost = 0.018111ms
+n_threads = 4
+Gather key stats cost = 0.00261
+Parallel process file cost = 3101.24ms
+Aggregate stats cost = 3.52262ms
+Output stats cost = 0.797671ms
+Runtime inside main = 3105.7ms
+Time to munmap = 210.012
+Time to free memory = 4.15906
+
+real    0m3.323s
+user    0m11.988s
+sys     0m0.624s
+
+Using 4 threads
+PC has 32 physical cores
+Malloc cost = 0.00733
+init mmap file cost = 0.016791ms
+n_threads = 4
+Gather key stats cost = 0.0026
+Parallel process file cost = 3106.8ms
+Aggregate stats cost = 3.36974ms
+Output stats cost = 8.56271ms
+Runtime inside main = 3118.85ms
+Time to munmap = 209.135
+Time to free memory = 4.53156
+
+real    0m3.336s
+user    0m11.955s
+sys     0m0.672s
+
+Using 2 threads
+PC has 32 physical cores
+Malloc cost = 0.00723
+init mmap file cost = 0.016861ms
+n_threads = 2
+Gather key stats cost = 0.00246
+Parallel process file cost = 6143.92ms
+Aggregate stats cost = 1.88906ms
+Output stats cost = 8.42699ms
+Runtime inside main = 6154.36ms
+Time to munmap = 209.303
+Time to free memory = 2.71965
+
+real    0m6.370s
+user    0m11.864s
+sys     0m0.624s
+
+Using 1 threads
+PC has 32 physical cores
+Malloc cost = 0.00766
+init mmap file cost = 0.018791ms
+n_threads = 1
+Gather key stats cost = 0.00265
+Parallel process file cost = 12393.9ms
+Aggregate stats cost = 0.851344ms
+Output stats cost = 0.792841ms
+Runtime inside main = 12395.7ms
+Time to munmap = 212.851
+Time to free memory = 1.52351
+
+real    0m12.613s
+user    0m12.071s
+sys     0m0.540s
+
+Using 1 threads
+PC has 32 physical cores
+Malloc cost = 0.00561
+init mmap file cost = 0.01259ms
+n_threads = 1
+Gather key stats cost = 0.00168
+Parallel process file cost = 12223.8ms
+Aggregate stats cost = 0.861344ms
+Output stats cost = 8.6082ms
+Runtime inside main = 12233.3ms
+Time to munmap = 209.668
+Time to free memory = 1.47878
+
+real    0m12.447s
+user    0m11.896s
+sys     0m0.540s

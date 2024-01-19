@@ -9,3 +9,5 @@ cpu_spec3.txt
 *testing*
 *.rs
 *backup*
+*test_simd*
+*stackoverflow*

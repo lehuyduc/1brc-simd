@@ -40,7 +40,7 @@ constexpr int N_CORES = MAX_N_THREADS;
 constexpr int N_CORES = N_CORES_PARAM;
 #endif
 
-constexpr bool DEBUG = 0;
+constexpr bool DEBUG = 1;
 
 
 struct Stats {
@@ -221,7 +221,7 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
         int idx = 0;        
         while (idx + 32 < len) {
           __m256i chars = _mm256_loadu_si256((__m256i*)(data + idx));          
-          __m256i bin_chars = _mm256_loadu_si256((__m256i*)(hmap[myhash].key_long + idx));
+          __m256i bin_chars = _mm256_load_si256((__m256i*)(hmap[myhash].key_long + idx));
           if (unlikely(!mm256i_equal(chars, bin_chars))) goto NEXT_LOOP;
           idx += 32;
         }
@@ -230,7 +230,7 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
           __m256i mask = _mm256_loadu_si256((__m256i*)(strcmp_mask32 + 32 - (len - idx)));
           __m256i chars = _mm256_loadu_si256((__m256i*)(data + idx));
           __m256i key_chars = _mm256_and_si256(chars, mask);
-          __m256i bin_chars = _mm256_loadu_si256((__m256i*)(hmap[myhash].key_long + idx));
+          __m256i bin_chars = _mm256_load_si256((__m256i*)(hmap[myhash].key_long + idx));
           if (likely(mm256i_equal(key_chars, bin_chars))) break;
         } else {
           // len must be >= 97
@@ -263,7 +263,7 @@ inline void __attribute__((always_inline)) handle_line(const uint8_t* data, Hash
         memcpy(hmap[myhash].key_short, data, len);
         memset(hmap[myhash].key_short + len, 0, 32 - len);
       } else {
-        hmap[myhash].key_long = new uint8_t[MAX_KEY_LENGTH];
+        hmap[myhash].key_long = new (std::align_val_t(32))uint8_t[MAX_KEY_LENGTH];
         memcpy(hmap[myhash].key_long, data, len);
         memset(hmap[myhash].key_long + len, 0, MAX_KEY_LENGTH - len);
       }

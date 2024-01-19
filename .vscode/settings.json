@@ -26,6 +26,7 @@
     "initializer_list": "cpp",
     "random": "cpp",
     "format": "cpp",
-    "forward_list": "cpp"
+    "forward_list": "cpp",
+    "xlocale": "cpp"
   }
 }

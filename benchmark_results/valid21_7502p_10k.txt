@@ -1,0 +1,291 @@
+// force 64 thread 
+
+root@C.8418209:~/1brc-simd$ ./run.sh 64 64
+real    0m0.899s
+user    0m28.999s
+sys     0m2.508s
+
+root@C.8418209:~/1brc-simd$ hyperfine --warmup 1 --runs 10 './main measurements.txt'
+Benchmark 1: ./main measurements.txt
+  Time (mean ± σ):     908.3 ms ±   7.7 ms    [User: 29214.3 ms, System: 2438.3 ms]
+  Range (min … max):   895.4 ms … 919.2 ms    10 runs
+
+root@C.8418209:~/1brc-simd$ numactl --physcpubind=0-7 hyperfine --warmup 1 --runs 10 './main measurements.txt'
+Benchmark 1: ./main measurements.txt
+  Time (mean ± σ):      2.981 s ±  0.026 s    [User: 19.261 s, System: 1.165 s]
+  Range (min … max):    2.939 s …  3.038 s    10 runs
+
+// compile 64 thread
+root@C.8418209:~/1brc-simd$ ./run.sh 
+
+real    0m0.908s
+user    0m17.237s
+sys     0m1.100s
+e99d23f6fa210b0d9c43a63e335d8d49f4a247ca7cc237bea0fe4c8b64b1933e  result.txt
+root@C.8418209:~/1brc-simd$ hyperfine --warmup 1 --runs 10 './main measurements.txt'
+Benchmark 1: ./main measurements.txt
+  Time (mean ± σ):     924.3 ms ±   9.7 ms    [User: 17231.9 ms, System: 1285.3 ms]
+  Range (min … max):   910.0 ms … 943.4 ms    10 runs
+
+root@C.8418209:~/1brc-simd$ numactl --physcpubind=0-7 hyperfine --warmup 1 --runs 10 './main measurements.txt'
+Benchmark 1: ./main measurements.txt
+  Time (mean ± σ):      2.649 s ±  0.027 s    [User: 17.288 s, System: 0.972 s]
+  Range (min … max):    2.595 s …  2.685 s    10 runs
+
+// compile 8 thread
+root@C.8418209:~/1brc-simd$ ./run.sh 8
+
+real    0m2.365s
+user    0m15.942s
+sys     0m0.880s
+e99d23f6fa210b0d9c43a63e335d8d49f4a247ca7cc237bea0fe4c8b64b1933e  result.txt
+root@C.8418209:~/1brc-simd$ hyperfine --warmup 1 --runs 10 './main measurements.txt'
+Benchmark 1: ./main measurements.txt
+  Time (mean ± σ):      2.386 s ±  0.011 s    [User: 15.940 s, System: 0.891 s]
+  Range (min … max):    2.373 s …  2.410 s    10 runs
+ 
+root@C.8418209:~/1brc-simd$ numactl --physcpubind=0-7 hyperfine --warmup 1 --runs 10 './main measurements.txt'
+Benchmark 1: ./main measurements.txt
+  Time (mean ± σ):      2.415 s ±  0.027 s    [User: 16.098 s, System: 0.829 s]
+  Range (min … max):    2.389 s …  2.477 s    10 runs
+
+//------------------------------
+//------------------------------
+//------------------------------
+root@C.8418209:~/1brc-simd$ ./run.sh 
+Using 64 threads
+PC has 32 physical cores
+Malloc cost = 0.0049
+init mmap file cost = 0.01319ms
+n_threads = 32
+Gather key stats cost = 4.92082
+Parallel process file cost = 571.445ms
+Aggregate stats cost = 29.0191ms
+Output stats cost = 16.47ms
+Runtime inside main = 621.972ms
+Time to munmap = 253.387
+Time to free memory = 12.1558
+
+real    0m0.902s
+user    0m17.158s
+sys     0m1.144s
+e99d23f6fa210b0d9c43a63e335d8d49f4a247ca7cc237bea0fe4c8b64b1933e  result.txt
+root@C.8418209:~/1brc-simd$ ./run.sh 
+Using 64 threads
+PC has 32 physical cores
+Malloc cost = 0.0087
+init mmap file cost = 0.037651ms
+n_threads = 32
+Gather key stats cost = 4.76614
+Parallel process file cost = 570.393ms
+Aggregate stats cost = 27.7282ms
+Output stats cost = 15.6728ms
+Runtime inside main = 618.736ms
+Time to munmap = 252.294
+Time to free memory = 12.4396
+
+real    0m0.899s
+user    0m16.990s
+sys     0m1.325s
+e99d23f6fa210b0d9c43a63e335d8d49f4a247ca7cc237bea0fe4c8b64b1933e  result.txt
+
+root@C.8418209:~/1brc-simd$ time ./main
+Using 64 threads
+PC has 32 physical cores
+Malloc cost = 0.00841
+init mmap file cost = 0.016551ms
+n_threads = 32
+Gather key stats cost = 4.92439
+Parallel process file cost = 575.357ms
+Aggregate stats cost = 26.9671ms
+Output stats cost = 27.4178ms
+Runtime inside main = 634.798ms
+Time to munmap = 252.736
+Time to free memory = 12.2449
+
+real    0m0.914s
+user    0m17.093s
+sys     0m1.273s
+
+//------------------------------
+//------------------------------
+//------------------------------
+root@C.8418209:~/1brc-simd$ ./run.sh 16
+Using 16 threads
+PC has 32 physical cores
+Malloc cost = 0.007071
+init mmap file cost = 0.01858ms
+n_threads = 16
+Gather key stats cost = 0.00275
+Parallel process file cost = 1059.51ms
+Aggregate stats cost = 18.6467ms
+Output stats cost = 15.3892ms
+Runtime inside main = 1093.68ms
+Time to munmap = 254.017
+Time to free memory = 6.41397
+
+real    0m1.364s
+user    0m16.069s
+sys     0m1.003s
+e99d23f6fa210b0d9c43a63e335d8d49f4a247ca7cc237bea0fe4c8b64b1933e  result.txt
+root@C.8418209:~/1brc-simd$ time ./main
+Using 16 threads
+PC has 32 physical cores
+Malloc cost = 0.00612
+init mmap file cost = 0.018131ms
+n_threads = 16
+Gather key stats cost = 0.00201
+Parallel process file cost = 1066.79ms
+Aggregate stats cost = 18.3499ms
+Output stats cost = 23.5124ms
+Runtime inside main = 1108.77ms
+Time to munmap = 255.164
+Time to free memory = 6.53291
+
+real    0m1.380s
+user    0m15.978s
+sys     0m1.128s
+
+root@C.8418209:~/1brc-simd$ ./run.sh 8
+Using 8 threads
+PC has 32 physical cores
+Malloc cost = 0.00713
+init mmap file cost = 0.018121ms
+n_threads = 8
+Gather key stats cost = 0.00264
+Parallel process file cost = 2075.81ms
+Aggregate stats cost = 13.4638ms
+Output stats cost = 15.4485ms
+Runtime inside main = 2104.85ms
+Time to munmap = 252.873
+Time to free memory = 3.62394
+
+real    0m2.365s
+user    0m15.985s
+sys     0m0.840s
+e99d23f6fa210b0d9c43a63e335d8d49f4a247ca7cc237bea0fe4c8b64b1933e  result.txt
+root@C.8418209:~/1brc-simd$ time ./main
+Using 8 threads
+PC has 32 physical cores
+Malloc cost = 0.00739
+init mmap file cost = 0.016841ms
+n_threads = 8
+Gather key stats cost = 0.00251
+Parallel process file cost = 2121.64ms
+Aggregate stats cost = 14.004ms
+Output stats cost = 31.5872ms
+Runtime inside main = 2167.37ms
+Time to munmap = 267.222
+Time to free memory = 3.9365
+
+real    0m2.442s
+user    0m15.997s
+sys     0m0.916s
+
+root@C.8418209:~/1brc-simd$ ./run.sh 4
+Using 4 threads
+PC has 32 physical cores
+Malloc cost = 0.003611
+init mmap file cost = 0.009391ms
+n_threads = 4
+Gather key stats cost = 0.00125
+Parallel process file cost = 4120.9ms
+Aggregate stats cost = 7.31707ms
+Output stats cost = 15.8825ms
+Runtime inside main = 4144.2ms
+Time to munmap = 257.604
+Time to free memory = 2.5441
+
+real    0m4.408s
+user    0m15.955s
+sys     0m0.680s
+e99d23f6fa210b0d9c43a63e335d8d49f4a247ca7cc237bea0fe4c8b64b1933e  result.txt
+root@C.8418209:~/1brc-simd$ time ./main
+Using 4 threads
+PC has 32 physical cores
+Malloc cost = 0.00762
+init mmap file cost = 0.01703ms
+n_threads = 4
+Gather key stats cost = 0.0025
+Parallel process file cost = 4097.16ms
+Aggregate stats cost = 7.30712ms
+Output stats cost = 23.72ms
+Runtime inside main = 4128.32ms
+Time to munmap = 257.297
+Time to free memory = 2.77662
+
+real    0m4.393s
+user    0m15.834s
+sys     0m0.788s
+
+root@C.8418209:~/1brc-simd$ ./run.sh 2
+Using 2 threads
+PC has 32 physical cores
+Malloc cost = 0.00497
+init mmap file cost = 0.0139ms
+n_threads = 2
+Gather key stats cost = 0.001851
+Parallel process file cost = 8244.58ms
+Aggregate stats cost = 3.8363ms
+Output stats cost = 15.7097ms
+Runtime inside main = 8264.22ms
+Time to munmap = 258.359
+Time to free memory = 1.57971
+
+real    0m8.528s
+user    0m15.958s
+sys     0m0.760s
+e99d23f6fa210b0d9c43a63e335d8d49f4a247ca7cc237bea0fe4c8b64b1933e  result.txt
+root@C.8418209:~/1brc-simd$ time ./main
+Using 2 threads
+PC has 32 physical cores
+Malloc cost = 0.00755
+init mmap file cost = 0.017951ms
+n_threads = 2
+Gather key stats cost = 0.00246
+Parallel process file cost = 8129.44ms
+Aggregate stats cost = 3.83352ms
+Output stats cost = 23.896ms
+Runtime inside main = 8157.28ms
+Time to munmap = 254.727
+Time to free memory = 1.56688
+
+real    0m8.418s
+user    0m15.669s
+sys     0m0.869s
+
+root@C.8418209:~/1brc-simd$ ./run.sh 1
+Using 1 threads
+PC has 32 physical cores
+Malloc cost = 0.00491
+init mmap file cost = 0.01403ms
+n_threads = 1
+Gather key stats cost = 0.00178
+Parallel process file cost = 16544.1ms
+Aggregate stats cost = 2.29785ms
+Output stats cost = 15.851ms
+Runtime inside main = 16562.4ms
+Time to munmap = 260.118
+Time to free memory = 0.791166
+
+real    0m16.827s
+user    0m16.085s
+sys     0m0.740s
+e99d23f6fa210b0d9c43a63e335d8d49f4a247ca7cc237bea0fe4c8b64b1933e  result.txt
+root@C.8418209:~/1brc-simd$ time ./main
+Using 1 threads
+PC has 32 physical cores
+Malloc cost = 0.00563
+init mmap file cost = 0.01189ms
+n_threads = 1
+Gather key stats cost = 0.00171
+Parallel process file cost = 16307.8ms
+Aggregate stats cost = 2.31983ms
+Output stats cost = 23.3952ms
+Runtime inside main = 16333.6ms
+Time to munmap = 257.63
+Time to free memory = 0.794387
+
+real    0m16.596s
+user    0m15.845s
+sys     0m0.740s

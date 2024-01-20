@@ -26,7 +26,7 @@ using namespace std;
 constexpr uint32_t SMALL = 749449;
 constexpr uint32_t SHL_CONST = 18;
 constexpr int MAX_KEY_LENGTH = 100;
-constexpr uint32_t NUM_BINS = 16384 * 8; // for 10k key cases. For 413 key cases, 16384 is enough.
+constexpr uint32_t NUM_BINS = 16384 * 4; // for 10k key cases. For 413 key cases, 16384 is enough.
 
 #ifndef N_THREADS_PARAM
 constexpr int MAX_N_THREADS = 8; // to match evaluation server
@@ -40,7 +40,7 @@ constexpr int N_CORES = MAX_N_THREADS;
 constexpr int N_CORES = N_CORES_PARAM;
 #endif
 
-constexpr bool DEBUG = 0;
+constexpr bool DEBUG = 1;
 
 
 struct Stats {
@@ -108,7 +108,7 @@ inline int __attribute__((always_inline)) mm256i_equal(__m256i a, __m256i b)
   return _mm256_testz_si256(neq, neq);
 }
 
-inline void __attribute__((always_inline)) handle_line_slow(const uint8_t* data, HashBin* hmap, size_t &data_idx)
+inline void __attribute__((always_inline)) handle_line(const uint8_t* data, HashBin* hmap, size_t &data_idx)
 {
   uint32_t pos = 16;
   uint32_t myhash;
@@ -171,6 +171,7 @@ inline void __attribute__((always_inline)) handle_line_slow(const uint8_t* data,
   // intentionally move index updating before hmap_insert
   // to improve register dependency chain
   data_idx += pos + 5 + (data[pos + 3] == '.');
+  if (unlikely(hmap[myhash].len == 0)) goto INSERT_VALUE;
 
   if (likely(len <= 16)) {
     // loading everything and calculate twice is consistently 1% faster than just
@@ -184,7 +185,7 @@ inline void __attribute__((always_inline)) handle_line_slow(const uint8_t* data,
 
     __m128i bin_chars = _mm_load_si128((__m128i*)hmap[myhash].key_short);
     __m128i neq = _mm_xor_si128(bin_chars, key_chars);
-    if (likely(_mm_test_all_zeros(neq, neq) || hmap[myhash].len == 0)) {
+    if (likely(_mm_test_all_zeros(neq, neq))) {
       // consistent 2.5% improvement in `user` time by testing first bin before loop
     }
     else {
@@ -197,7 +198,7 @@ inline void __attribute__((always_inline)) handle_line_slow(const uint8_t* data,
       }
     }
   }
-  else if (likely(len <= 32 && hmap[myhash].len != 0)) {
+  else if (likely(len <= 32)) {
     __m256i chars = _mm256_loadu_si256((__m256i*)data);
     __m256i mask = _mm256_loadu_si256((__m256i*)(strcmp_mask32 + 32 - len));
     __m256i key_chars = _mm256_and_si256(chars, mask);
@@ -246,7 +247,8 @@ inline void __attribute__((always_inline)) handle_line_slow(const uint8_t* data,
       myhash = (myhash + 1) % NUM_BINS;
     }
   }
-  
+
+  INSERT_VALUE:
   hmap[myhash].cnt++;
   hmap[myhash].sum += value;
   if (unlikely(hmap[myhash].max < value)) hmap[myhash].max = value;
@@ -270,168 +272,6 @@ inline void __attribute__((always_inline)) handle_line_slow(const uint8_t* data,
   }
 }
 
-inline uint64_t __attribute__((always_inline)) get_mask64(__m128i a, __m128i b) {
-  return uint64_t(_mm_movemask_epi8(a)) | (uint64_t(_mm_movemask_epi8(b)) << 32ULL);
-}
-
-inline uint64_t __attribute__((always_inline)) get_mask64(__m256i a, __m256i b) {
-  return uint64_t(uint32_t(_mm256_movemask_epi8(a))) | (uint64_t(uint32_t(_mm256_movemask_epi8(b))) << 32ULL);
-}
-
-inline void __attribute__((always_inline)) handle_line_packed(const uint8_t* start, const uint8_t* end, HashBin* hmap, size_t &data_idx)
-{
-  const uint8_t* data = start;  
-  size_t offset = 0;
-  int line_start = 0;  
-  while (likely(data < end)) {
-    __m256i bytes32_0 = _mm256_loadu_si256((__m256i*)(start + offset));
-    __m256i bytes32_1 = _mm256_loadu_si256((__m256i*)(start + offset + 32));
-    __m256i semicolons32 = _mm256_set1_epi8(';');
-    __m256i compare_semicolon_0 = _mm256_cmpeq_epi8(bytes32_0, semicolons32);
-    __m256i compare_semicolon_1 = _mm256_cmpeq_epi8(bytes32_1, semicolons32);
-    uint64_t semicolons_mask = get_mask64(compare_semicolon_0, compare_semicolon_1);
-    __m128i index = _mm_setr_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
-    int pos = (start + offset + _tzcnt_u64(semicolons_mask)) - data;
-  
-    while (likely(semicolons_mask)) {      
-      const int len = pos;
-
-      __m128i chars = _mm_loadu_si128((__m128i*)(data));      
-      __m128i mask = _mm_cmplt_epi8(index, _mm_set1_epi8(pos));
-      __m128i key_chars = _mm_and_si128(chars, mask);  
-      __m128i sumchars = _mm_add_epi8(key_chars, _mm_unpackhi_epi64(key_chars, key_chars));
-
-      uint32_t myhash = (uint64_t(_mm_cvtsi128_si64(sumchars)) * SMALL) >> SHL_CONST;
-
-      pos += (data[pos + 1] == '-'); // after this, data[pos] = position right before first digit
-      int sign = (data[pos] == '-') ? -1 : 1;
-      myhash %= NUM_BINS; // let pos be computed first beacause it's needed earlier  
-
-      // PhD code from curiouscoding.nl. Must use uint32_t else undefined behavior
-      uint32_t uvalue;
-      memcpy(&uvalue, data + pos + 1, 4);
-      uvalue <<= 8 * (data[pos + 2] == '.');
-      constexpr uint64_t C = 1 + (10 << 16) + (100 << 24); // holy hell
-      uvalue &= 0x0f000f0f; // new mask just dropped
-      uvalue = ((uvalue * C) >> 24) & ((1 << 10) - 1); // actual branchless
-      int value = int(uvalue) * sign;
-      
-      semicolons_mask &= semicolons_mask - 1;
-      auto cur_data = data;
-      data += pos + 5 + (data[pos + 3] == '.');
-      pos = (start + offset + _tzcnt_u64(semicolons_mask)) - data;
-
-      if (likely(len <= 16)) {
-        //if (tzcnt == 0 && len == 9) cout << "AAA" << std::endl;
-        // loading everything and calculate twice is consistently 1% faster than just
-        // using old result (comment all 4 lines)
-        // Keep all these 4 lines is faster than commenting any of them, even though
-        // all 4 variables were already calculated before. HUH???
-        __m128i chars = _mm_loadu_si128((__m128i*)cur_data);
-        __m128i index = _mm_setr_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
-        __m128i mask = _mm_cmplt_epi8(index, _mm_set1_epi8(len));
-        __m128i key_chars = _mm_and_si128(chars, mask);
-
-        __m128i bin_chars = _mm_load_si128((__m128i*)hmap[myhash].key_short);
-        __m128i neq = _mm_xor_si128(bin_chars, key_chars);
-        if (likely(_mm_test_all_zeros(neq, neq) || hmap[myhash].len == 0)) {
-          // consistent 2.5% improvement in `user` time by testing first bin before loop
-        }
-        else {
-          //if (tzcnt == 0 && len == 9) cout << "AAA 2" << std::endl;
-          myhash = (myhash + 1) % NUM_BINS; // previous one failed
-          while (hmap[myhash].len > 0) {
-            //if (tzcnt == 0 && len == 9) cout << "AAA 3" << std::endl;
-            //if (tzcnt == 0 && len == 9) cout << "myhash = " << myhash << " " << hmap[myhash].len << std::endl;
-            // SIMD string comparison      
-            __m128i bin_chars = _mm_load_si128((__m128i*)hmap[myhash].key_short);
-            if (likely(mm128i_equal(key_chars, bin_chars))) break;        
-            myhash = (myhash + 1) % NUM_BINS;    
-          }
-        }
-      }
-      else if (likely(len <= 32 && hmap[myhash].len != 0)) {
-        //if (tzcnt == 0 && len == 9) cout << "BBB" << std::endl;
-        __m256i chars = _mm256_loadu_si256((__m256i*)cur_data);
-        __m256i mask = _mm256_loadu_si256((__m256i*)(strcmp_mask32 + 32 - len));
-        __m256i key_chars = _mm256_and_si256(chars, mask);
-
-        __m256i bin_chars = _mm256_load_si256((__m256i*)hmap[myhash].key_short);
-        if (likely(mm256i_equal(key_chars, bin_chars))) {}
-        else {
-          myhash = (myhash + 1) % NUM_BINS;
-          while (hmap[myhash].len > 0) {
-            // SIMD string comparison      
-            __m256i bin_chars = _mm256_load_si256((__m256i*)hmap[myhash].key_short);
-            if (likely(mm256i_equal(key_chars, bin_chars))) break;            
-            myhash = (myhash + 1) % NUM_BINS;    
-          }
-        }
-      }
-      else {
-        //if (tzcnt == 0 && len == 9) cout << "CCC" << std::endl;
-        while (hmap[myhash].len > 0) {
-          // check if this slot is mine
-          if (likely(hmap[myhash].len == len)) {
-            int idx = 0;        
-            while (idx + 32 < len) {
-              __m256i chars = _mm256_loadu_si256((__m256i*)(cur_data + idx));          
-              __m256i bin_chars = _mm256_loadu_si256((__m256i*)(hmap[myhash].key_long + idx));
-              if (unlikely(!mm256i_equal(chars, bin_chars))) goto NEXT_LOOP;
-              idx += 32;
-            }
-            
-            if (likely(idx <= 64)) {
-              __m256i mask = _mm256_loadu_si256((__m256i*)(strcmp_mask32 + 32 - (len - idx)));
-              __m256i chars = _mm256_loadu_si256((__m256i*)(cur_data + idx));
-              __m256i key_chars = _mm256_and_si256(chars, mask);
-              __m256i bin_chars = _mm256_loadu_si256((__m256i*)(hmap[myhash].key_long + idx));
-              if (likely(mm256i_equal(key_chars, bin_chars))) break;
-            } else {
-              // len must be >= 97
-              bool equal = true;
-              for (int i = idx; i < len; i++) if (cur_data[i] != hmap[myhash].key_long[i]) {
-                  equal = false;
-                  break;
-              }
-              if (likely(equal)) break;
-            }
-          }
-          NEXT_LOOP:
-          myhash = (myhash + 1) % NUM_BINS;
-        }
-      }      
-      
-      hmap[myhash].cnt++;
-      hmap[myhash].sum += value;
-      if (unlikely(hmap[myhash].max < value)) hmap[myhash].max = value;
-      if (unlikely(hmap[myhash].min > value)) hmap[myhash].min = value;  
-
-      // each key will only be free 1 first time, so it's unlikely
-      if (unlikely(hmap[myhash].len == 0)) {
-          hmap[myhash].len = len;      
-          hmap[myhash].sum = value;
-          hmap[myhash].cnt = 1;
-          hmap[myhash].max = value;
-          hmap[myhash].min = value;
-          if (len <= 32) {
-            memcpy(hmap[myhash].key_short, cur_data, len);
-            memset(hmap[myhash].key_short + len, 0, 32 - len);
-          } else {
-            hmap[myhash].key_long = new uint8_t[MAX_KEY_LENGTH];
-            memcpy(hmap[myhash].key_long, cur_data, len);
-            memset(hmap[myhash].key_long + len, 0, MAX_KEY_LENGTH - len);
-          }
-      }
-      
-    }
-
-    offset += 64;
-  }
-
-  data_idx += uint64_t(data - start);
-}
-
 void find_next_line_start(const uint8_t* data, size_t N, size_t &idx)
 {
   if (idx == 0) return;
@@ -447,7 +287,8 @@ size_t handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to
   }
 
   size_t start_idx = from_byte;
-  find_next_line_start(data, to_byte, start_idx);
+  find_next_line_start(data, to_byte, start_idx);  
+
 
   constexpr size_t ILP_LEVEL = 2;
   size_t BYTES_PER_THREAD = (to_byte - start_idx) / ILP_LEVEL;
@@ -458,17 +299,17 @@ size_t handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to
 
   size_t end_idx0 = idx1 - 1;
   size_t end_idx1 = to_byte;
-  size_t end_idx0_pre = end_idx0 - 2 * MAX_KEY_LENGTH;
-  size_t end_idx1_pre = end_idx0 - 2 * MAX_KEY_LENGTH;
 
-  handle_line_packed(data + idx0, data + end_idx0_pre, hmaps[tid], idx0);
-  handle_line_packed(data + idx1, data + end_idx1_pre, hmaps[tid], idx1);  
+  while (likely(idx0 < end_idx0 && idx1 < end_idx1)) {
+    handle_line(data + idx0, hmaps[tid], idx0);
+    handle_line(data + idx1, hmaps[tid], idx1);    
+  }
 
   while (idx0 < end_idx0) {
-    handle_line_slow(data + idx0, hmaps[tid], idx0);
+    handle_line(data + idx0, hmaps[tid], idx0);
   }
   while (idx1 < end_idx1) {
-    handle_line_slow(data + idx1, hmaps[tid], idx1);
+    handle_line(data + idx1, hmaps[tid], idx1);
   }
 
   return idx1; // return the beginning of the first line of the next block

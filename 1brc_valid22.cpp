@@ -40,7 +40,7 @@ constexpr int N_CORES = MAX_N_THREADS;
 constexpr int N_CORES = N_CORES_PARAM;
 #endif
 
-constexpr bool DEBUG = 0;
+constexpr bool DEBUG = 1;
 
 
 struct Stats {

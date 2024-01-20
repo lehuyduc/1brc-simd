@@ -153,3 +153,76 @@ root@C.8320440:~/1brc$ hyperfine --warmup 1 --runs 10 "./calculate_average_artsi
 Benchmark 1: ./calculate_average_artsiomkorzun.sh 2>&1
   Time (mean ± σ):      1.037 s ±  0.012 s    [User: 38.503 s, System: 2.567 s]
   Range (min … max):    1.016 s …  1.055 s    10 runs
+
+
+//----------------------------------------
+//----------------------------------------
+Commit: f435d64
+//----------------------------------------
+// DEFAULT DATASET
+root@C.8418209:~/1brc$ hyperfine --warmup 1 --runs 10 "./calculate_average_artsiomkorzun.sh 2>&1"
+Benchmark 1: ./calculate_average_artsiomkorzun.sh 2>&1
+  Time (mean ± σ):     615.1 ms ±   3.2 ms    [User: 21715.9 ms, System: 10221.5 ms]
+  Range (min … max):   610.8 ms … 622.2 ms    10 runs
+ 
+root@C.8418209:~/1brc$ hyperfine --warmup 1 --runs 10 "./calculate_average_artsiomkorzun.sh 2>&1"
+Benchmark 1: ./calculate_average_artsiomkorzun.sh 2>&1
+  Time (mean ± σ):     613.8 ms ±   3.6 ms    [User: 21588.5 ms, System: 10326.6 ms]
+  Range (min … max):   608.8 ms … 621.0 ms    10 runs
+
+root@C.8418209:~/1brc$ numactl --physcpubind=0-7 hyperfine --warmup 1 --runs 10 "./calculate_average_artsiomkorzun.sh 2>&1"
+Benchmark 1: ./calculate_average_artsiomkorzun.sh 2>&1
+  Time (mean ± σ):      1.957 s ±  0.007 s    [User: 14.025 s, System: 1.439 s]
+  Range (min … max):    1.948 s …  1.965 s    10 runs
+
+root@C.8418209:~/1brc$ numactl --physcpubind=0-7 hyperfine --warmup 1 --runs 10 "./calculate_average_artsiomkorzun.sh 2>&1"
+Benchmark 1: ./calculate_average_artsiomkorzun.sh 2>&1
+  Time (mean ± σ):      1.957 s ±  0.007 s    [User: 14.044 s, System: 1.439 s]
+  Range (min … max):    1.948 s …  1.971 s    10 runs
+
+//----------------------------------------
+// DEFAULT DATASET, set thread to 8 manually in code
+root@C.8418209:~/1brc$ hyperfine --warmup 1 --runs 10 "./calculate_average_artsiomkorzun.sh 2>&1"
+Benchmark 1: ./calculate_average_artsiomkorzun.sh 2>&1
+  Time (mean ± σ):      1.927 s ±  0.003 s    [User: 13.952 s, System: 1.321 s]
+  Range (min … max):    1.919 s …  1.931 s    10 runs
+
+root@C.8418209:~/1brc$ numactl --physcpubind=0-7 hyperfine --warmup 1 --runs 10 "./calculate_average_artsiomkorzun.sh 2>&1"
+Benchmark 1: ./calculate_average_artsiomkorzun.sh 2>&1
+  Time (mean ± σ):      1.959 s ±  0.006 s    [User: 14.020 s, System: 1.454 s]
+  Range (min … max):    1.949 s …  1.968 s    10 runs
+
+//----------------------------------------
+// 10K DATASET
+root@C.8418209:~/1brc$ hyperfine --warmup 1 --runs 10 "./calculate_average_artsiomkorzun.sh 2>&1"
+Benchmark 1: ./calculate_average_artsiomkorzun.sh 2>&1
+  Time (mean ± σ):     937.7 ms ±   3.7 ms    [User: 43003.2 ms, System: 7718.6 ms]
+  Range (min … max):   932.3 ms … 944.4 ms    10 runs
+ 
+root@C.8418209:~/1brc$ sha256sum ^C
+root@C.8418209:~/1brc$ hyperfine --warmup 1 --runs 10 "./calculate_average_artsiomkorzun.sh 2>&1"
+Benchmark 1: ./calculate_average_artsiomkorzun.sh 2>&1
+  Time (mean ± σ):     936.9 ms ±   4.9 ms    [User: 42794.8 ms, System: 7776.4 ms]
+  Range (min … max):   927.1 ms … 944.7 ms    10 runs
+ 
+ root@C.8418209:~/1brc$ numactl --physcpubind=0-7 hyperfine --warmup 1 --runs 10 "./calculate_average_artsiomkorzun.sh 2>&1"
+Benchmark 1: ./calculate_average_artsiomkorzun.sh 2>&1
+  Time (mean ± σ):      3.143 s ±  0.106 s    [User: 19.932 s, System: 4.894 s]
+  Range (min … max):    3.008 s …  3.341 s    10 runs
+ 
+root@C.8418209:~/1brc$ numactl --physcpubind=0-7 hyperfine --warmup 1 --runs 10 "./calculate_average_artsiomkorzun.sh 2>&1"
+Benchmark 1: ./calculate_average_artsiomkorzun.sh 2>&1
+  Time (mean ± σ):      3.080 s ±  0.070 s    [User: 19.876 s, System: 4.407 s]
+  Range (min … max):    3.003 s …  3.251 s    10 runs
+
+//----------------------------------------
+// 10K dataset, set thread to 8 manually in code
+root@C.8418209:~/1brc$ hyperfine --warmup 1 --runs 10 "./calculate_average_artsiomkorzun.sh 2>&1"
+Benchmark 1: ./calculate_average_artsiomkorzun.sh 2>&1
+  Time (mean ± σ):      2.392 s ±  0.006 s    [User: 17.259 s, System: 1.584 s]
+  Range (min … max):    2.382 s …  2.400 s    10 runs
+ 
+root@C.8418209:~/1brc$ numactl --physcpubind=0-7 hyperfine --warmup 1 --runs 10 "./calculate_average_artsiomkorzun.sh 2>&1"
+Benchmark 1: ./calculate_average_artsiomkorzun.sh 2>&1
+  Time (mean ± σ):      3.158 s ±  0.124 s    [User: 19.829 s, System: 5.102 s]
+  Range (min … max):    3.015 s …  3.368 s    10 runs

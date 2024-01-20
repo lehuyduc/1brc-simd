@@ -5,7 +5,13 @@ https://drive.google.com/file/d/1HEyNw4M453n0tnuaAm9nwaCiLydQYnpo/view?usp=shari
 
 https://drive.google.com/file/d/1HEyNw4M453n0tnuaAm9nwaCiLydQYnpo/view?usp=sharing
 
+https://drive.google.com/file/d/1T-G9iPJ0L4hAt3U7FEig025B7SCxj6aX/view?usp=sharing
+
 sudo apt install unzip nano
+sudo apt install numactl
+
+wget https://github.com/sharkdp/hyperfine/releases/download/v1.16.1/hyperfine_1.16.1_amd64.deb
+sudo dpkg -i hyperfine_1.16.1_amd64.deb
 
 
 unzip measurements.txt
@@ -23,4 +29,16 @@ rm main
 g++ -o main main.cpp -O3 -std=c++17 -march=native -m64 -lpthread
 time ./main measurements.txt
 
+curl -H "Authorization: Bearer ya29.a0AfB_byAgDjaNNJ-pabIaKbu_coxdrykoZ4jTlj7eJlmcanOnYAYqL0VwkWyPwCLf78AIPilCiJRyVFceTLY32XvrOSO_pMlApgOc9pzoejdnflbjIxVsrGN4BcQzRjuS9bPMsa2oNh2_IPCQhL4DHYtwQoNzE83FoZDVaCgYKAXUSARASFQHGX2MibjmmskfEU1gQXxZmI_D2lw0171" https://www.googleapis.com/drive/v3/files/1HEyNw4M453n0tnuaAm9nwaCiLydQYnpo?alt=media -o measurements.zip
+
+curl -H "Authorization: Bearer ya29.a0AfB_byAgDjaNNJ-pabIaKbu_coxdrykoZ4jTlj7eJlmcanOnYAYqL0VwkWyPwCLf78AIPilCiJRyVFceTLY32XvrOSO_pMlApgOc9pzoejdnflbjIxVsrGN4BcQzRjuS9bPMsa2oNh2_IPCQhL4DHYtwQoNzE83FoZDVaCgYKAXUSARASFQHGX2MibjmmskfEU1gQXxZmI_D2lw0171" https://www.googleapis.com/drive/v3/files/1T-G9iPJ0L4hAt3U7FEig025B7SCxj6aX?alt=media -o measurements_10k_small.zip
+
+
 https://stackoverflow.com/questions/65312867/how-to-download-large-file-from-google-drive-from-terminal-gdown-doesnt-work
+
+https://computingforgeeks.com/install-java-jdk-21-openjdk-21-on-ubuntu/
+
+curl -s "https://get.sdkman.io" | bash
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+sdk install java 21.0.1-graal
+sudo apt-get install -y libz-dev

@@ -1,0 +1,169 @@
+// RUNNING WITHOUT HYPERFINE
+
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt > log.txt
+
+real    0m0.485s
+user    0m13.822s
+sys     0m2.470s
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt > log.txt
+
+real    0m0.470s
+user    0m12.984s
+sys     0m2.584s
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt > log.txt
+
+real    0m0.471s
+user    0m12.685s
+sys     0m2.626s
+
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt > log.txt
+
+real    0m0.473s
+user    0m13.573s
+sys     0m2.439s
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt > log.txt
+
+real    0m0.482s
+user    0m13.566s
+sys     0m2.556s
+
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 32 > log.txt
+
+real    0m0.399s
+user    0m7.725s
+sys     0m1.865s
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 32 > log.txt
+
+real    0m0.393s
+user    0m7.486s
+sys     0m1.861s
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 32 > log.txt
+
+real    0m0.400s
+user    0m7.811s
+sys     0m1.784s
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 32 > log.txt
+
+real    0m0.384s
+user    0m7.444s
+sys     0m1.802s
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 32 > log.txt
+
+real    0m0.376s
+user    0m7.530s
+sys     0m1.878s
+
+//-----------------
+//-----------------
+
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ hyperfine -w 1 -r 5 -- "./1brc /root/1brc/measurements.txt > log.txt"
+Benchmark 1: ./1brc /root/1brc/measurements.txt > log.txt
+  Time (mean ± σ):     475.0 ms ±   7.9 ms    [User: 12980.7 ms, System: 2560.6 ms]
+  Range (min … max):   468.1 ms … 488.4 ms    5 runs
+ 
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ hyperfine -w 1 -r 5 -- "./1brc /root/1brc/measurements.txt > log.txt"
+Benchmark 1: ./1brc /root/1brc/measurements.txt > log.txt
+  Time (mean ± σ):     475.9 ms ±  10.0 ms    [User: 13184.6 ms, System: 2479.1 ms]
+  Range (min … max):   462.9 ms … 488.2 ms    5 runs
+
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ hyperfine -w 1 -r 10 -- "./1brc /root/1brc/measurements.txt --threads 32 > log.txt"
+Benchmark 1: ./1brc /root/1brc/measurements.txt --threads 32 > log.txt
+  Time (mean ± σ):     397.1 ms ±   3.7 ms    [User: 7744.6 ms, System: 1839.9 ms]
+  Range (min … max):   391.8 ms … 402.3 ms    10 runs
+
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ hyperfine -w 1 -r 10 -- "./1brc /root/1brc/measurements.txt --threads 32 > log.txt"
+Benchmark 1: ./1brc /root/1brc/measurements.txt --threads 32 > log.txt
+  Time (mean ± σ):     390.9 ms ±  10.3 ms    [User: 7679.4 ms, System: 1823.0 ms]
+  Range (min … max):   367.8 ms … 403.7 ms    10 runs
+
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ hyperfine -w 1 -r 10 -- "./1brc /root/1brc/measurements.txt --threads 8 > log.txt"
+Benchmark 1: ./1brc /root/1brc/measurements.txt --threads 8 > log.txt
+  Time (mean ± σ):     926.8 ms ±   2.5 ms    [User: 5764.2 ms, System: 1412.1 ms]
+  Range (min … max):   923.0 ms … 929.8 ms    10 runs
+
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ hyperfine -w 1 -r 10 -- "./1brc /root/1brc/measurements.txt --threads 1 > log.txt"
+Benchmark 1: ./1brc /root/1brc/measurements.txt --threads 1 > log.txt
+  Time (mean ± σ):      7.060 s ±  0.033 s    [User: 5.717 s, System: 1.346 s]
+  Range (min … max):    7.009 s …  7.115 s    10 runs
+
+// TEST MMAP
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc/measurements.txt --io MM > log.txt
+
+real    0m0.575s
+user    0m13.513s
+sys     0m2.044s
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ hyperfine -w 1 -r 10 -- "./1brc /root/1brc/measurements.txt --io MM > log.txt"
+Benchmark 1: ./1brc /root/1brc/measurements.txt --io MM > log.txt
+  Time (mean ± σ):     566.2 ms ±  14.5 ms    [User: 13509.2 ms, System: 1985.2 ms]
+  Range (min … max):   544.4 ms … 592.9 ms    10 runs
+ 
+
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$  hyperfine -w 1 -r 10 -- "./1brc /root/1brc/measurements.txt --io MM --threads 32 > log.txt"
+Benchmark 1: ./1brc /root/1brc/measurements.txt --io MM --threads 32 > log.txt
+  Time (mean ± σ):     541.8 ms ±  16.5 ms    [User: 7419.1 ms, System: 1084.8 ms]
+  Range (min … max):   520.4 ms … 566.9 ms    10 runs
+
+
+//------------------------------
+//------------------------------
+//------------------------------
+// 10K DATASET
+
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements_10k.txt > log.txt
+
+real    0m1.138s
+user    0m36.971s
+sys     0m10.005s
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements_10k.txt > log.txt
+
+real    0m1.173s
+user    0m36.732s
+sys     0m10.541s
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements_10k.txt > log.txt
+
+real    0m1.136s
+user    0m36.685s
+sys     0m10.389s
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ sha256sum log.txt 
+c66b055540b4ee2509e81ab0ec919498126432a1c469408355548f16c442a083  log.txt
+
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ hyperfine -w 1 -r 5 -- "./1brc /root/1brc-simd/measurements_10k.txt > log.txt"
+Benchmark 1: ./1brc /root/1brc-simd/measurements_10k.txt > log.txt
+  Time (mean ± σ):      1.191 s ±  0.028 s    [User: 38.524 s, System: 10.204 s]
+  Range (min … max):    1.150 s …  1.226 s    5 runs
+
+time ./1brc /root/1brc-simd/measurements_10k.txt --threads 32 > log.txt
+
+//-------------------------- 32 threads
+
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements_10k.txt --threads 32 > log.txt
+
+real    0m0.994s
+user    0m22.169s
+sys     0m4.251s
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements_10k.txt --threads 32 > log.txt
+
+real    0m1.028s
+user    0m22.307s
+sys     0m4.035s
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements_10k.txt --threads 32 > log.txt
+
+real    0m1.014s
+user    0m22.293s
+sys     0m4.193s
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ hyperfine -w 1 -r 5 -- "./1brc /root/1brc-simd/measurements_10k.txt --threads 32 > log.txt
+> ^C
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ hyperfine -w 1 -r 5 -- "./1brc /root/1brc-simd/measurements_10k.txt --threads 32 > log.txt"
+Benchmark 1: ./1brc /root/1brc-simd/measurements_10k.txt --threads 32 > log.txt
+  Time (mean ± σ):      1.026 s ±  0.008 s    [User: 22.361 s, System: 4.271 s]
+  Range (min … max):    1.018 s …  1.038 s    5 runs
+
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ hyperfine -w 1 -r 5 -- "./1brc /root/1brc-simd/measurements_10k.txt --threads 8 > log.txt"
+Benchmark 1: ./1brc /root/1brc-simd/measurements_10k.txt --threads 8 > log.txt
+  Time (mean ± σ):      2.719 s ±  0.010 s    [User: 19.081 s, System: 1.950 s]
+  Range (min … max):    2.706 s …  2.731 s    5 runs
+
+root@C.8687809:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ hyperfine -w 1 -r 5 -- "./1brc /root/1brc-simd/measurements_10k.txt --threads 1 > log.txt"
+Benchmark 1: ./1brc /root/1brc-simd/measurements_10k.txt --threads 1 > log.txt
+  Time (mean ± σ):     20.882 s ±  0.045 s    [User: 18.976 s, System: 1.906 s]
+  Range (min … max):   20.838 s … 20.941 s    5 runs

@@ -1,0 +1,167 @@
+Bandwidth = 6.47131e+10 byte/s
+
+// force 128 thread
+root@C.8621043:~/1brc-simd$ ./run.sh 128 128
+
+real    0m0.211s
+user    0m0.000s
+sys     0m0.003s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+root@C.8621043:~/1brc-simd$ hyperfine --warmup 1 --runs 10 ./main
+Benchmark 1: ./main
+  Time (mean ± σ):     179.3 ms ±   8.0 ms    [User: 1.2 ms, System: 1.2 ms]
+  Range (min … max):   166.0 ms … 191.2 ms    10 runs
+ 
+root@C.8621043:~/1brc-simd$ hyperfine --warmup 1 --runs 10 ./main
+Benchmark 1: ./main
+  Time (mean ± σ):     182.3 ms ±   7.9 ms    [User: 1.7 ms, System: 0.8 ms]
+  Range (min … max):   171.3 ms … 194.1 ms    10 runs
+
+root@C.8621043:~/1brc-simd$ numactl --physcpubind=0-7 hyperfine --warmup 1 --runs 10 ./main
+Benchmark 1: ./main
+  Time (mean ± σ):      1.142 s ±  0.034 s    [User: 0.001 s, System: 0.000 s]
+  Range (min … max):    1.078 s …  1.171 s    10 runs
+ 
+root@C.8621043:~/1brc-simd$ numactl --physcpubind=0-7 hyperfine --warmup 1 --runs 10 ./main
+Benchmark 1: ./main
+  Time (mean ± σ):      1.139 s ±  0.036 s    [User: 0.001 s, System: 0.000 s]
+  Range (min … max):    1.085 s …  1.186 s    10 runs
+
+// compile 8 thread
+root@C.8621043:~/1brc-simd$ ./run.sh 8
+
+real    0m1.083s
+user    0m0.000s
+sys     0m0.002s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+root@C.8621043:~/1brc-simd$ hyperfine --warmup 1 --runs 10 ./main
+Benchmark 1: ./main
+  Time (mean ± σ):      1.128 s ±  0.011 s    [User: 0.002 s, System: 0.001 s]
+  Range (min … max):    1.105 s …  1.148 s    10 runs
+ 
+root@C.8621043:~/1brc-simd$ numactl --physcpubind=0-7 hyperfine --warmup 1 --runs 10 ./main
+Benchmark 1: ./main
+  Time (mean ± σ):      1.146 s ±  0.020 s    [User: 0.001 s, System: 0.001 s]
+  Range (min … max):    1.130 s …  1.195 s    10 runs
+
+//-----------------
+//-----------------
+
+root@C.8621043:~/1brc-simd$ ./run.sh 128 128
+
+real    0m0.153s
+user    0m0.000s
+sys     0m0.002s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+root@C.8621043:~/1brc-simd$ time ./main
+
+real    0m0.237s
+user    0m0.003s
+sys     0m0.000s
+root@C.8621043:~/1brc-simd$ time ./main
+
+real    0m0.179s
+user    0m0.000s
+sys     0m0.003s
+root@C.8621043:~/1brc-simd$ time ./main
+
+real    0m0.161s
+user    0m0.000s
+sys     0m0.003s
+root@C.8621043:~/1brc-simd$ time ./main
+
+real    0m0.189s
+user    0m0.003s
+sys     0m0.000s
+root@C.8621043:~/1brc-simd$ time ./main
+
+real    0m0.181s
+user    0m0.000s
+sys     0m0.003s
+
+
+root@C.8621043:~/1brc-simd$ time ./main
+Using 128 threads
+PC has 128 physical cores
+Malloc cost = 0.028012
+init mmap file cost = 0.035867ms
+n_threads = 128
+Gather key stats cost = 0.001683
+Parallel process file cost = 153.274ms
+Aggregate stats cost = 3.03091ms
+Output stats cost = 1.16195ms
+Runtime inside main = 157.647ms
+
+real    0m0.161s
+user    0m0.000s
+sys     0m0.003s
+root@C.8621043:~/1brc-simd$ time ./main
+Using 128 threads
+PC has 128 physical cores
+Malloc cost = 0.021471
+init mmap file cost = 0.035668ms
+n_threads = 128
+Gather key stats cost = 0.001703
+Parallel process file cost = 152.523ms
+Aggregate stats cost = 3.05354ms
+Output stats cost = 1.17362ms
+Runtime inside main = 156.931ms
+
+real    0m0.160s
+user    0m0.003s
+sys     0m0.000s
+root@C.8621043:~/1brc-simd$ time ./main
+Using 128 threads
+PC has 128 physical cores
+Malloc cost = 0.029015
+init mmap file cost = 0.038022ms
+n_threads = 128
+Gather key stats cost = 0.001613
+Parallel process file cost = 165.196ms
+Aggregate stats cost = 2.90413ms
+Output stats cost = 1.18899ms
+Runtime inside main = 169.481ms
+
+real    0m0.173s
+user    0m0.003s
+sys     0m0.000s
+root@C.8621043:~/1brc-simd$ time ./main
+Using 128 threads
+PC has 128 physical cores
+Malloc cost = 0.027362
+init mmap file cost = 0.036018ms
+n_threads = 128
+Gather key stats cost = 0.001663
+Parallel process file cost = 158.703ms
+Aggregate stats cost = 3.14665ms
+Output stats cost = 1.17639ms
+Runtime inside main = 163.207ms
+
+real    0m0.166s
+user    0m0.003s
+sys     0m0.000s
+
+root@C.8621043:~/1brc-simd$ ./run.sh 128 128
+
+real    0m0.182s
+user    0m0.002s
+sys     0m0.001s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+root@C.8621043:~/1brc-simd$ ./run.sh 128 128
+
+real    0m0.174s
+user    0m0.000s
+sys     0m0.002s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+root@C.8621043:~/1brc-simd$ time ./main
+
+real    0m0.175s
+user    0m0.001s
+sys     0m0.001s
+root@C.8621043:~/1brc-simd$ time ./main
+
+real    0m0.149s
+user    0m0.002s
+sys     0m0.000s
+root@C.8621043:~/1brc-simd$ sha256sum result.txt 
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt

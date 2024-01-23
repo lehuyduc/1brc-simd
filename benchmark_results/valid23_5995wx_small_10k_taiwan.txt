@@ -1,0 +1,36 @@
+Bandwidth = 6.47131e+10 byte/s
+
+// force 128 thread
+root@C.8621043:~/1brc-simd$ ./run.sh 128 128
+Using 128 threads
+PC has 128 physical cores
+Malloc cost = 0.012664
+init mmap file cost = 0.029806ms
+n_threads = 128
+Gather key stats cost = 0.001654
+Parallel process file cost = 403.869ms
+Aggregate stats cost = 37.5618ms
+Output stats cost = 11.0155ms
+Runtime inside main = 452.613ms
+
+real    0m0.455s
+user    0m0.003s
+sys     0m0.000s
+e99d23f6fa210b0d9c43a63e335d8d49f4a247ca7cc237bea0fe4c8b64b1933e  result.txt
+
+root@C.8621043:~/1brc-simd$ hyperfine --warmup 1 --runs 10 './main measurements_10k.txt'
+Benchmark 1: ./main measurements_10k.txt
+  Time (mean ± σ):     528.2 ms ±   6.0 ms    [User: 1.8 ms, System: 0.7 ms]
+  Range (min … max):   518.1 ms … 539.6 ms    10 runs
+ 
+root@C.8621043:~/1brc-simd$ hyperfine --warmup 1 --runs 10 './main measurements_10k.txt'
+Benchmark 1: ./main measurements_10k.txt
+  Time (mean ± σ):     527.7 ms ±  16.5 ms    [User: 2.1 ms, System: 0.6 ms]
+  Range (min … max):   491.0 ms … 556.7 ms    10 runs
+
+root@C.8621043:~/1brc-simd$ numactl --physcpubind=0-7 hyperfine --warmup 1 --runs 10 './main measurements_10k.txt'
+Benchmark 1: ./main measurements_10k.txt
+  Time (mean ± σ):      3.725 s ±  0.095 s    [User: 0.001 s, System: 0.000 s]
+  Range (min … max):    3.520 s …  3.815 s    10 runs
+ 
+ 

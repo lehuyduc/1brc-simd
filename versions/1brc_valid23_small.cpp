@@ -18,15 +18,17 @@
 #include <cstring>
 #include <atomic>
 #include <malloc.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 using namespace std;
 
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
 
-constexpr uint32_t SMALL = 749449;
-constexpr uint32_t SHL_CONST = 18;
+constexpr uint32_t SMALL = 276187;
+constexpr uint32_t SHL_CONST = 20;
 constexpr int MAX_KEY_LENGTH = 100;
-constexpr uint32_t NUM_BINS = 16384 * 8; // for 10k key cases. For 413 key cases, 16384 is enough.
+constexpr uint32_t NUM_BINS = 16384; // for 10k key cases. For 413 key cases, 16384 is enough.
 
 #ifndef N_THREADS_PARAM
 constexpr int MAX_N_THREADS = 8; // to match evaluation server
@@ -66,7 +68,7 @@ struct HashBin {
     int64_t sum;
     int cnt;
     int max;
-    int min;    
+    int min;
     int len;
     uint8_t* key_long;
 
@@ -125,7 +127,7 @@ inline void __attribute__((always_inline)) handle_line_slow(const uint8_t* data,
   // this save 1 _mm256_mullo_epi32 instruction, improving performance by ~3%
   //__m128i mask = _mm_loadu_si128((__m128i*)(strcmp_mask + 16 - pos));
   __m128i mask = _mm_cmplt_epi8(index, _mm_set1_epi8(pos));
-  __m128i key_chars = _mm_and_si128(chars, mask);  
+  __m128i key_chars = _mm_and_si128(chars, mask);
   __m128i sumchars = _mm_add_epi8(key_chars, _mm_unpackhi_epi64(key_chars, key_chars)); // 0.7% faster total program time compared to srli
 
   // okay so it was actually technically illegal. Am I stupid?
@@ -140,12 +142,12 @@ inline void __attribute__((always_inline)) handle_line_slow(const uint8_t* data,
     __m256i compared32_2 = _mm256_cmpeq_epi8(chars32_2, separators32);
 
     uint64_t separator_mask64 = uint64_t(_mm256_movemask_epi8(compared32_1)) | (uint64_t(_mm256_movemask_epi8(compared32_2)) << 32);
-    if (likely(separator_mask64)) pos = 17 + __builtin_ctzll(separator_mask64);      
+    if (likely(separator_mask64)) pos = 17 + __builtin_ctzll(separator_mask64);
     else {
       __m256i chars32_3 = _mm256_loadu_si256((__m256i*)(data + 81));
       __m256i compared32_3 = _mm256_cmpeq_epi8(chars32_3, separators32);
       uint32_t separator_mask_final = _mm256_movemask_epi8(compared32_3);
-      pos = 81 + __builtin_ctz(separator_mask_final);      
+      pos = 81 + __builtin_ctz(separator_mask_final);
     }
   }
 
@@ -157,7 +159,7 @@ inline void __attribute__((always_inline)) handle_line_slow(const uint8_t* data,
   int len = pos;
   pos += (data[pos + 1] == '-'); // after this, data[pos] = position right before first digit
   int sign = (data[pos] == '-') ? -1 : 1;
-  myhash %= NUM_BINS; // let pos be computed first beacause it's needed earlier  
+  myhash %= NUM_BINS; // let pos be computed first beacause it's needed earlier
 
   // PhD code from curiouscoding.nl. Must use uint32_t else undefined behavior
   uint32_t uvalue;
@@ -190,10 +192,10 @@ inline void __attribute__((always_inline)) handle_line_slow(const uint8_t* data,
     else {
       myhash = (myhash + 1) % NUM_BINS; // previous one failed
       while (hmap[myhash].len > 0) {
-        // SIMD string comparison      
+        // SIMD string comparison
         __m128i bin_chars = _mm_load_si128((__m128i*)hmap[myhash].key_short);
-        if (likely(mm128i_equal(key_chars, bin_chars))) break;        
-        myhash = (myhash + 1) % NUM_BINS;    
+        if (likely(mm128i_equal(key_chars, bin_chars))) break;
+        myhash = (myhash + 1) % NUM_BINS;
       }
     }
   }
@@ -207,10 +209,10 @@ inline void __attribute__((always_inline)) handle_line_slow(const uint8_t* data,
     else {
       myhash = (myhash + 1) % NUM_BINS;
       while (hmap[myhash].len > 0) {
-        // SIMD string comparison      
+        // SIMD string comparison
         __m256i bin_chars = _mm256_load_si256((__m256i*)hmap[myhash].key_short);
-        if (likely(mm256i_equal(key_chars, bin_chars))) break;            
-        myhash = (myhash + 1) % NUM_BINS;    
+        if (likely(mm256i_equal(key_chars, bin_chars))) break;
+        myhash = (myhash + 1) % NUM_BINS;
       }
     }
   }
@@ -218,14 +220,14 @@ inline void __attribute__((always_inline)) handle_line_slow(const uint8_t* data,
     while (hmap[myhash].len > 0) {
       // check if this slot is mine
       if (likely(hmap[myhash].len == len)) {
-        int idx = 0;        
+        int idx = 0;
         while (idx + 32 < len) {
-          __m256i chars = _mm256_loadu_si256((__m256i*)(data + idx));          
+          __m256i chars = _mm256_loadu_si256((__m256i*)(data + idx));
           __m256i bin_chars = _mm256_loadu_si256((__m256i*)(hmap[myhash].key_long + idx));
           if (unlikely(!mm256i_equal(chars, bin_chars))) goto NEXT_LOOP;
           idx += 32;
         }
-        
+
         if (likely(idx <= 64)) {
           __m256i mask = _mm256_loadu_si256((__m256i*)(strcmp_mask32 + 32 - (len - idx)));
           __m256i chars = _mm256_loadu_si256((__m256i*)(data + idx));
@@ -246,15 +248,15 @@ inline void __attribute__((always_inline)) handle_line_slow(const uint8_t* data,
       myhash = (myhash + 1) % NUM_BINS;
     }
   }
-  
+
   hmap[myhash].cnt++;
   hmap[myhash].sum += value;
   if (unlikely(hmap[myhash].max < value)) hmap[myhash].max = value;
-  if (unlikely(hmap[myhash].min > value)) hmap[myhash].min = value;  
+  if (unlikely(hmap[myhash].min > value)) hmap[myhash].min = value;
 
   // each key will only be free 1 first time, so it's unlikely
   if (unlikely(hmap[myhash].len == 0)) {
-      hmap[myhash].len = len;      
+      hmap[myhash].len = len;
       hmap[myhash].sum = value;
       hmap[myhash].cnt = 1;
       hmap[myhash].max = value;
@@ -280,9 +282,9 @@ inline uint64_t __attribute__((always_inline)) get_mask64(__m256i a, __m256i b) 
 
 inline void __attribute__((always_inline)) handle_line_packed(const uint8_t* start, const uint8_t* end, HashBin* hmap, size_t &data_idx)
 {
-  const uint8_t* data = start;  
+  const uint8_t* data = start;
   size_t offset = 0;
-  int line_start = 0;  
+  int line_start = 0;
   while (likely(data < end)) {
     __m256i bytes32_0 = _mm256_loadu_si256((__m256i*)(start + offset));
     __m256i bytes32_1 = _mm256_loadu_si256((__m256i*)(start + offset + 32));
@@ -292,20 +294,20 @@ inline void __attribute__((always_inline)) handle_line_packed(const uint8_t* sta
     uint64_t semicolons_mask = get_mask64(compare_semicolon_0, compare_semicolon_1);
     __m128i index = _mm_setr_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
     int pos = (start + offset + _tzcnt_u64(semicolons_mask)) - data;
-  
-    while (likely(semicolons_mask)) {      
+
+    while (likely(semicolons_mask)) {
       const int len = pos;
 
-      __m128i chars = _mm_loadu_si128((__m128i*)(data));      
+      __m128i chars = _mm_loadu_si128((__m128i*)(data));
       __m128i mask = _mm_cmplt_epi8(index, _mm_set1_epi8(pos));
-      __m128i key_chars = _mm_and_si128(chars, mask);  
+      __m128i key_chars = _mm_and_si128(chars, mask);
       __m128i sumchars = _mm_add_epi8(key_chars, _mm_unpackhi_epi64(key_chars, key_chars));
 
       uint32_t myhash = (uint64_t(_mm_cvtsi128_si64(sumchars)) * SMALL) >> SHL_CONST;
 
       pos += (data[pos + 1] == '-'); // after this, data[pos] = position right before first digit
       int sign = (data[pos] == '-') ? -1 : 1;
-      myhash %= NUM_BINS; // let pos be computed first beacause it's needed earlier  
+      myhash %= NUM_BINS; // let pos be computed first beacause it's needed earlier
 
       // PhD code from curiouscoding.nl. Must use uint32_t else undefined behavior
       uint32_t uvalue;
@@ -315,7 +317,7 @@ inline void __attribute__((always_inline)) handle_line_packed(const uint8_t* sta
       uvalue &= 0x0f000f0f; // new mask just dropped
       uvalue = ((uvalue * C) >> 24) & ((1 << 10) - 1); // actual branchless
       int value = int(uvalue) * sign;
-      
+
       semicolons_mask &= semicolons_mask - 1;
       auto cur_data = data;
       data += pos + 5 + (data[pos + 3] == '.');
@@ -343,10 +345,10 @@ inline void __attribute__((always_inline)) handle_line_packed(const uint8_t* sta
           while (hmap[myhash].len > 0) {
             //if (tzcnt == 0 && len == 9) cout << "AAA 3" << std::endl;
             //if (tzcnt == 0 && len == 9) cout << "myhash = " << myhash << " " << hmap[myhash].len << std::endl;
-            // SIMD string comparison      
+            // SIMD string comparison
             __m128i bin_chars = _mm_load_si128((__m128i*)hmap[myhash].key_short);
-            if (likely(mm128i_equal(key_chars, bin_chars))) break;        
-            myhash = (myhash + 1) % NUM_BINS;    
+            if (likely(mm128i_equal(key_chars, bin_chars))) break;
+            myhash = (myhash + 1) % NUM_BINS;
           }
         }
       }
@@ -361,10 +363,10 @@ inline void __attribute__((always_inline)) handle_line_packed(const uint8_t* sta
         else {
           myhash = (myhash + 1) % NUM_BINS;
           while (hmap[myhash].len > 0) {
-            // SIMD string comparison      
+            // SIMD string comparison
             __m256i bin_chars = _mm256_load_si256((__m256i*)hmap[myhash].key_short);
-            if (likely(mm256i_equal(key_chars, bin_chars))) break;            
-            myhash = (myhash + 1) % NUM_BINS;    
+            if (likely(mm256i_equal(key_chars, bin_chars))) break;
+            myhash = (myhash + 1) % NUM_BINS;
           }
         }
       }
@@ -373,14 +375,14 @@ inline void __attribute__((always_inline)) handle_line_packed(const uint8_t* sta
         while (hmap[myhash].len > 0) {
           // check if this slot is mine
           if (likely(hmap[myhash].len == len)) {
-            int idx = 0;        
+            int idx = 0;
             while (idx + 32 < len) {
-              __m256i chars = _mm256_loadu_si256((__m256i*)(cur_data + idx));          
+              __m256i chars = _mm256_loadu_si256((__m256i*)(cur_data + idx));
               __m256i bin_chars = _mm256_loadu_si256((__m256i*)(hmap[myhash].key_long + idx));
               if (unlikely(!mm256i_equal(chars, bin_chars))) goto NEXT_LOOP;
               idx += 32;
             }
-            
+
             if (likely(idx <= 64)) {
               __m256i mask = _mm256_loadu_si256((__m256i*)(strcmp_mask32 + 32 - (len - idx)));
               __m256i chars = _mm256_loadu_si256((__m256i*)(cur_data + idx));
@@ -400,16 +402,16 @@ inline void __attribute__((always_inline)) handle_line_packed(const uint8_t* sta
           NEXT_LOOP:
           myhash = (myhash + 1) % NUM_BINS;
         }
-      }      
-      
+      }
+
       hmap[myhash].cnt++;
       hmap[myhash].sum += value;
       if (unlikely(hmap[myhash].max < value)) hmap[myhash].max = value;
-      if (unlikely(hmap[myhash].min > value)) hmap[myhash].min = value;  
+      if (unlikely(hmap[myhash].min > value)) hmap[myhash].min = value;
 
       // each key will only be free 1 first time, so it's unlikely
       if (unlikely(hmap[myhash].len == 0)) {
-          hmap[myhash].len = len;      
+          hmap[myhash].len = len;
           hmap[myhash].sum = value;
           hmap[myhash].cnt = 1;
           hmap[myhash].max = value;
@@ -423,7 +425,7 @@ inline void __attribute__((always_inline)) handle_line_packed(const uint8_t* sta
             memset(hmap[myhash].key_long + len, 0, MAX_KEY_LENGTH - len);
           }
       }
-      
+
     }
 
     offset += 64;
@@ -453,16 +455,16 @@ size_t handle_line_raw(int tid, const uint8_t* data, size_t from_byte, size_t to
   size_t BYTES_PER_THREAD = (to_byte - start_idx) / ILP_LEVEL;
   size_t idx0 = start_idx;
   size_t idx1 = start_idx + BYTES_PER_THREAD * 1;
-  
-  find_next_line_start(data, to_byte, idx1);  
+
+  find_next_line_start(data, to_byte, idx1);
 
   size_t end_idx0 = idx1 - 1;
   size_t end_idx1 = to_byte;
   size_t end_idx0_pre = end_idx0 - 2 * MAX_KEY_LENGTH;
-  size_t end_idx1_pre = end_idx0 - 2 * MAX_KEY_LENGTH;
+  size_t end_idx1_pre = end_idx1 - 2 * MAX_KEY_LENGTH;
 
   handle_line_packed(data + idx0, data + end_idx0_pre, hmaps[tid], idx0);
-  handle_line_packed(data + idx1, data + end_idx1_pre, hmaps[tid], idx1);  
+  handle_line_packed(data + idx1, data + end_idx1_pre, hmaps[tid], idx1);
 
   while (idx0 < end_idx0) {
     handle_line_slow(data + idx0, hmaps[tid], idx0);
@@ -508,9 +510,7 @@ float roundTo1Decimal(float number) {
     return std::round(number * 10.0) / 10.0;
 }
 
-volatile int dummy;
-
-int main(int argc, char* argv[])
+int do_everything(int argc, char* argv[])
 {
   if constexpr(DEBUG) cout << "Using " << MAX_N_THREADS << " threads\n";
   if constexpr(DEBUG) cout << "PC has " << N_CORES << " physical cores\n";
@@ -535,7 +535,7 @@ int main(int argc, char* argv[])
 
   const uint8_t* data = reinterpret_cast<uint8_t*>(mapped_data_void);
   if constexpr(DEBUG) cout << "init mmap file cost = " << timer2.getCounterMsPrecise() << "ms\n";
-  
+
   //----------------------
   timer2.startCounter();
   size_t idx = 0;
@@ -555,7 +555,7 @@ int main(int argc, char* argv[])
 
     int unique_key_cnt = 0;
     for (int h = 0; h < NUM_BINS; h++) if (hmaps[0][h].len > 0) unique_key_cnt++;
-    if (unique_key_cnt > 500) n_threads = N_CORES;    
+    if (unique_key_cnt > 500) n_threads = N_CORES;
   }
 
   if constexpr(DEBUG) cout << "n_threads = " << n_threads << "\n";
@@ -563,7 +563,7 @@ int main(int argc, char* argv[])
 
   timer2.startCounter();
   size_t remaining_bytes = file_size - idx;
-  if (remaining_bytes / n_threads < 4 * MAX_KEY_LENGTH) n_threads = 1;  
+  if (remaining_bytes / n_threads < 4 * MAX_KEY_LENGTH) n_threads = 1;
   size_t bytes_per_thread = remaining_bytes / n_threads + 1;
   vector<size_t> tstart, tend;
   vector<std::thread> threads;
@@ -619,10 +619,10 @@ int main(int argc, char* argv[])
   } else {
     for (int tid = 0; tid < n_threads; tid++) {
       for (int h = 0; h < NUM_BINS; h++) if (hmaps[tid][h].len > 0) {
-          auto& bin = hmaps[tid][h];         
+          auto& bin = hmaps[tid][h];
           string key;
           if (bin.len <= 32) key = string(bin.key_short, bin.key_short + bin.len);
-          else key = string(bin.key_long, bin.key_long + bin.len);   
+          else key = string(bin.key_long, bin.key_long + bin.len);
           auto& stats = final_recorded_stats[key];
           stats.cnt += bin.cnt;
           stats.sum += bin.sum;
@@ -640,7 +640,7 @@ int main(int argc, char* argv[])
   }
   sort(results.begin(), results.end());
 
-  // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,  
+  // {Abha=-37.5/18.0/69.9, Abidjan=-30.0/26.0/78.1,
   ofstream fo("result.txt");
   fo << fixed << setprecision(1);
   fo << "{";
@@ -652,21 +652,49 @@ int main(int argc, char* argv[])
       float mymax = roundTo1Decimal(stats.max / 10.0);
       float mymin = roundTo1Decimal(stats.min / 10.0);
 
+      //if (station_name == "Bac") cout << stats.sum << " " << stats.cnt << " " << stats.max << " " << stats.min << "\n";
+
       fo << station_name << "=" << mymin << "/" << avg << "/" << mymax;
       if (i < results.size() - 1) fo << ", ";
   }
   fo << "}\n";
   fo.close();
   if constexpr(DEBUG) cout << "Output stats cost = " << timer2.getCounterMsPrecise() << "ms\n";
-
   if constexpr(DEBUG) cout << "Runtime inside main = " << timer.getCounterMsPrecise() << "ms\n";
+  kill(getppid(), SIGUSR1);
 
-  timer.startCounter();
-  munmap(mapped_data_void, file_size);
-  if constexpr(DEBUG) cout << "Time to munmap = " << timer.getCounterMsPrecise() << "\n";
+  // timer.startCounter();
+  // munmap(mapped_data_void, file_size);
+  // if constexpr(DEBUG) cout << "Time to munmap = " << timer.getCounterMsPrecise() << "\n";
 
-  timer.startCounter();  
-  free(global_hmaps);
-  if constexpr(DEBUG) cout << "Time to free memory = " << timer.getCounterMsPrecise() << "\n";
+  // timer.startCounter();
+  // free(global_hmaps);
+  // if constexpr(DEBUG) cout << "Time to free memory = " << timer.getCounterMsPrecise() << "\n";
   return 0;
 }
+
+
+void handleSignal(int signum) {
+    if (signum == SIGUSR1) {
+        //printf("Received SIGUSR1 signal. Exiting.\n");
+        exit(0);
+    }
+}
+
+int main(int argc, char* argv[])
+{
+  signal(SIGUSR1, handleSignal);
+
+  int pid = fork();
+  int status;
+  if (pid == 0) {
+    do_everything(argc, argv);
+  } else {
+    waitpid(pid, &status, 0);
+  }
+}
+
+// Fix wrong ILP implementation which caused huge potential performance loss.
+// Also made me thought mm256 separator parsing doesn't give much performance boost,
+// turns out it speedup things by a huge amount, especially at low thread count.
+// Other tiny changes

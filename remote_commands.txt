@@ -37,3 +37,36 @@ curl -s "https://get.sdkman.io" | bash
 source "$HOME/.sdkman/bin/sdkman-init.sh"
 sdk install java 21.0.1-graal
 sudo apt-get install -y libz-dev
+
+https://learn.microsoft.com/en-us/dotnet/core/install/linux-ubuntu-2204
+
+https://stackoverflow.com/questions/77498786/unable-to-locate-package-dotnet-sdk-8-0
+
+wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+rm packages-microsoft-prod.deb
+sudo apt-get update
+sudo apt-get install -y dotnet-host
+sudo apt-get install -y dotnet-sdk-8.0
+sudo apt-get update && \
+  sudo apt-get install -y aspnetcore-runtime-8.0
+sudo apt install dotnet-sdk-8.0
+sudo apt-get install zlib1g-dev
+
+
+dotnet publish -c release -r linux-x64
+cd bin/release/net8.0/linux-x64/publish/
+hyperfine -w 1 -r 5 -- "./1brc /root/1brc/measurements.txt > log.txt"
+
+root@C.8687809:~/1brc$ dotnet publish -c release -r linux-x64
+MSBuild version 17.8.3+195e7f5a3 for .NET
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+/usr/share/dotnet/sdk/8.0.101/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets(1253,5): error NETSDK1151: The referenced project '../1brc/1brc.csproj' is a self-contained executable.  A self-contained executable cannot be referenced by a non self-contained executable.  For more information, see https://aka.ms/netsdk1151 [/root/1brc/Benchmarks/Benchmarks.csproj]
+  1brc -> /root/1brc/1brc/bin/Release/net8.0/linux-x64/1brc.dll
+  1brc -> /root/1brc/1brc/bin/Release/net8.0/linux-x64/publish/
+  Tests -> /root/1brc/Tests/bin/Release/net8.0/linux-x64/Tests.dll
+  Tests -> /root/1brc/Tests/bin/Release/net8.0/linux-x64/publish/
+
+cd /root/1brc/1brc/bin/Release/net8.0/linux-x64/publi
+

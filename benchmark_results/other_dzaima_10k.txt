@@ -1,0 +1,37 @@
+1 thread
+real    0m53.456s
+user    0m52.469s
+sys     0m0.956s
+
+2 thread
+real    0m27.355s
+user    0m53.389s
+sys     0m0.952s
+
+4 thread
+real    0m13.705s
+user    0m53.271s
+sys     0m0.995s
+
+8 thread
+real    0m7.107s
+user    0m54.899s
+sys     0m1.076s
+
+real    0m7.092s
+user    0m54.435s
+sys     0m1.059s
+
+16 thread
+real    0m3.927s
+user    0m59.005s
+sys     0m1.204s
+
+real    0m4.022s
+user    0m59.535s
+sys     0m1.144s
+
+32 thread
+real    0m5.938s
+user    3m0.619s
+sys     0m2.054s

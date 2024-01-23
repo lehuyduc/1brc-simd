@@ -1,0 +1,31 @@
+Bandwidth = 5.92751e+10 byte/s
+
+root@C.8617362:~/1brc-simd$ ./run.sh 
+
+real    0m0.168s
+user    0m0.002s
+sys     0m0.000s
+a55d0d9d02661c33538f2e11bb86f1825a5f015d6dd3645416ec71bc50099ee5  result.txt
+
+root@C.8617362:~/1brc-simd$ time ./main
+
+real    0m0.192s
+user    0m0.000s
+sys     0m0.003s
+root@C.8617362:~/1brc-simd$ time ./main
+
+real    0m0.160s <= fastest
+user    0m0.002s
+sys     0m0.000s
+
+root@C.8617362:~/1brc-simd$ time ./main
+
+real    0m0.172s
+user    0m0.003s
+sys     0m0.000s
+
+root@C.8617362:~/1brc-simd$ time ./main
+
+real    0m0.179s
+user    0m0.000s
+sys     0m0.003s

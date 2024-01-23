@@ -1,0 +1,83 @@
+Bandwidth = 2.30162e+10 byte/s
+
+//------------------
+//------------------
+root@C.8768841:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt > log.txt
+
+real    0m0.556s
+user    0m13.294s
+sys     0m3.536s
+root@C.8768841:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt > log.txt
+
+real    0m0.557s
+user    0m13.460s
+sys     0m3.630s
+root@C.8768841:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt > log.txt
+
+real    0m0.553s
+user    0m13.305s
+sys     0m3.657s
+
+root@C.8768841:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ hyperfine --warmup 1 --runs 10 "./1brc /root/1brc-simd/measurements.txt > log.txt"
+Benchmark 1: ./1brc /root/1brc-simd/measurements.txt > log.txt
+  Time (mean ± σ):     531.2 ms ±   9.9 ms    [User: 13519.6 ms, System: 3318.7 ms]
+  Range (min … max):   513.7 ms … 542.6 ms    10 runs
+
+//------------------
+//------------------
+root@C.8768841:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 18 > log.txt
+
+real    0m0.587s
+user    0m7.589s
+sys     0m2.273s
+root@C.8768841:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 18 > log.txt
+
+real    0m0.608s
+user    0m7.917s
+sys     0m2.455s
+root@C.8768841:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 18 > log.txt
+
+real    0m0.614s
+user    0m7.518s
+sys     0m2.406s
+
+root@C.8768841:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ hyperfine --warmup 1 --runs 10 "./1brc /root/1brc-simd/measurements.txt --threads 18 > log.txt"
+Benchmark 1: ./1brc /root/1brc-simd/measurements.txt --threads 18 > log.txt
+  Time (mean ± σ):     559.5 ms ±   6.8 ms    [User: 7559.0 ms, System: 2117.1 ms]
+  Range (min … max):   547.9 ms … 571.6 ms    10 runs
+
+//------------------
+//------------------
+root@C.8768841:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 8 > log.txt
+
+real    0m1.086s
+user    0m6.477s
+sys     0m2.044s
+root@C.8768841:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 8 > log.txt
+
+real    0m1.093s
+user    0m6.670s
+sys     0m1.931s
+root@C.8768841:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 8 > log.txt
+
+real    0m1.083s
+user    0m6.453s
+sys     0m2.055s
+root@C.8768841:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ hyperfine --warmup 1 --runs 10 "./1brc /root/1brc-simd/measurements.txt --threads 8 > log.txt"
+Benchmark 1: ./1brc /root/1brc-simd/measurements.txt --threads 8 > log.txt
+  Time (mean ± σ):      1.068 s ±  0.008 s    [User: 6.449 s, System: 1.946 s]
+  Range (min … max):    1.055 s …  1.081 s    10 runs
+
+//------------------
+//------------------
+root@C.8768841:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 1 > log.txt
+
+real    0m7.663s
+user    0m5.943s
+sys     0m1.732s
+root@C.8768841:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 1 > log.txt
+
+real    0m7.694s
+user    0m6.169s
+sys     0m1.537s
+time ./1brc /root/1brc-simd/measurements.txt --threads 1 > log.txt

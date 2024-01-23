@@ -68,5 +68,14 @@ MSBuild version 17.8.3+195e7f5a3 for .NET
   Tests -> /root/1brc/Tests/bin/Release/net8.0/linux-x64/Tests.dll
   Tests -> /root/1brc/Tests/bin/Release/net8.0/linux-x64/publish/
 
-cd /root/1brc/1brc/bin/Release/net8.0/linux-x64/publi
+cd /root/1brc/1brc/bin/Release/net8.0/linux-x64/publish
 
+time ./1brc /root/1brc-simd/measurements.txt > log.txt
+
+curl -H "Authorization: Bearer ACCESS_TOKEN" https://www.googleapis.com/drive/v3/files/FILE_ID?alt=media -o FILE_NAME 
+
+curl -H "Authorization: Bearer ya29.a0AfB_byCZzLlYR13tySFa_LV6RaH0yB63oOZFOqZBiazA_6XELHcDk449VmYpttMx-Y8kl55xRP2PTbxWN4-eaRovVAvCBsB5H69-oUa1IVNzaO_giJnouQ2gQxzP0Vfxi2hpOu8Oczy5imTXNStPtWpu8gxS5aUhDzuVaCgYKARwSARASFQHGX2MiCRsDLPtlMkUlQHfClFaiWg0171" https://www.googleapis.com/drive/v3/files/1HEyNw4M453n0tnuaAm9nwaCiLydQYnpo?alt=media -o measurements.zip
+
+curl -H "Authorization: Bearer ya29.a0AfB_byCZzLlYR13tySFa_LV6RaH0yB63oOZFOqZBiazA_6XELHcDk449VmYpttMx-Y8kl55xRP2PTbxWN4-eaRovVAvCBsB5H69-oUa1IVNzaO_giJnouQ2gQxzP0Vfxi2hpOu8Oczy5imTXNStPtWpu8gxS5aUhDzuVaCgYKARwSARASFQHGX2MiCRsDLPtlMkUlQHfClFaiWg0171" https://www.googleapis.com/drive/v3/files/1T-G9iPJ0L4hAt3U7FEig025B7SCxj6aX?alt=media -o measurements_10k_small.zip
+
+numactl 

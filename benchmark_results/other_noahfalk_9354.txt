@@ -1,0 +1,241 @@
+Bandwidth = 1.44662e+11 byte/s
+Bandwidth = 1.4585e+11 byte/s
+
+//-------------------------
+//-------------------------
+//-------------------------
+Timing                         Total ms  Diff ms
+GlobalIOOpening                     0.0      0.0
+GlobalIOOpened                      4.7      4.6
+FirstWorkerThreadStart             60.4     55.7
+LastWorkerThreadStart          17,375.0 17,314.6
+FirstWorkerThreadComplete      18,916.0  1,541.0
+LastWorkerThreadComplete       23,980.2  5,064.2
+ResultsMerged                  24,505.3    525.1
+ResultsFormatted               24,547.7     42.4
+GlobalIOClosed                 24,555.8      8.1
+ResultsPrinted                 24,575.1     19.3
+
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --timings > log.txt
+
+real    0m0.275s
+user    0m8.146s
+sys     0m3.665s
+
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --timings > log.txt
+
+real    0m0.263s
+user    0m9.119s
+sys     0m3.142s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --timings > log.txt
+
+real    0m0.270s
+user    0m9.175s
+sys     0m3.350s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --timings > log.txt
+
+real    0m0.260s
+user    0m10.125s
+sys     0m3.898s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --timings > log.txt
+
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --timings > log.txt
+
+real    0m0.259s
+user    0m9.321s
+sys     0m3.619s
+
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt > log.txt
+
+real    0m0.250s
+user    0m8.485s
+sys     0m3.684s
+
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt > log.txt
+
+real    0m0.251s
+user    0m7.611s
+sys     0m3.801s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt > log.txt
+
+real    0m0.242s
+user    0m8.476s
+sys     0m3.464s
+
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt > log.txt
+
+real    0m0.247s
+user    0m8.353s
+sys     0m4.094s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt > log.txt
+
+real    0m0.253s
+user    0m7.752s
+sys     0m4.091s
+
+//-------------------------
+//-------------------------
+//-------------------------
+Timing                         Total ms  Diff ms
+GlobalIOOpening                     2.0      2.0
+GlobalIOOpened                      6.0      4.0
+FirstWorkerThreadStart             64.5     58.5
+LastWorkerThreadStart           7,329.9  7,265.4
+FirstWorkerThreadComplete      16,840.2  9,510.3
+LastWorkerThreadComplete       18,245.0  1,404.8
+ResultsMerged                  19,240.3    995.3
+ResultsFormatted               19,280.3     40.0
+GlobalIOClosed                 19,285.5      5.2
+ResultsPrinted                 19,306.7     21.2
+
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 64 > log.txt
+
+real    0m0.212s
+user    0m5.418s
+sys     0m2.431s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 64 > log.txt
+
+real    0m0.230s
+user    0m5.712s
+sys     0m2.152s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 64 > log.txt
+
+real    0m0.226s
+user    0m5.697s
+sys     0m2.371s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 64 > log.txt
+
+real    0m0.218s
+user    0m6.057s
+sys     0m1.919s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 64 > log.txt
+
+real    0m0.209s
+user    0m5.692s
+sys     0m2.258s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 64 > log.txt
+
+real    0m0.205s
+user    0m5.495s
+sys     0m2.353s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 64 > log.txt
+
+real    0m0.196s
+user    0m5.539s
+sys     0m2.316s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 64 > log.txt
+
+real    0m0.213s
+user    0m5.936s
+sys     0m2.132s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 64 > log.txt
+
+real    0m0.204s
+user    0m5.871s
+sys     0m2.166s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 64 > log.txt
+
+real    0m0.221s
+user    0m5.865s
+sys     0m2.046s
+
+//-------------------------
+//-------------------------
+//-------------------------
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 32 > log.txt
+
+real    0m0.244s
+user    0m4.795s
+sys     0m1.398s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 32 > log.txt
+
+real    0m0.236s
+user    0m4.890s
+sys     0m1.244s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 32 > log.txt
+
+real    0m0.248s
+user    0m4.966s
+sys     0m1.206s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 32 > log.txt
+
+real    0m0.249s
+user    0m4.948s
+sys     0m1.260s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 32 > log.txt
+
+real    0m0.256s
+user    0m4.968s
+sys     0m1.284s
+
+//-------------------------
+//-------------------------
+//-------------------------
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 16 > log.txt
+
+real    0m0.388s
+user    0m4.707s
+sys     0m1.128s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 16 > log.txt
+
+real    0m0.399s
+user    0m4.738s
+sys     0m1.151s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 16 > log.txt
+
+real    0m0.398s
+user    0m4.825s
+sys     0m1.068s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 16 > log.txt
+
+real    0m0.392s
+user    0m4.727s
+sys     0m1.114s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 16 > log.txt
+
+real    0m0.397s
+user    0m4.806s
+sys     0m1.066s
+
+//-------------------------
+//-------------------------
+//-------------------------
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 8 > log.txt
+
+real    0m0.727s
+user    0m4.673s
+sys     0m0.984s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 8 > log.txt
+
+real    0m0.723s
+user    0m4.578s
+sys     0m1.085s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 8 > log.txt
+
+real    0m0.725s
+user    0m4.716s
+sys     0m0.965s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 8 > log.txt
+
+real    0m0.726s
+user    0m4.654s
+sys     0m1.017s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 8 > log.txt
+
+real    0m0.731s
+user    0m4.717s
+sys     0m0.977s
+
+//-------------------------
+//-------------------------
+//-------------------------
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 1 > log.txt
+
+real    0m5.549s
+user    0m4.644s
+sys     0m0.916s
+root@C.8857501:~/1brc/1brc/bin/Release/net8.0/linux-x64/publish$ time ./1brc /root/1brc-simd/measurements.txt --threads 1 > log.txt
+
+real    0m5.531s
+user    0m4.633s
+sys     0m0.909s
